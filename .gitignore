@@ -3,16 +3,16 @@ node_modules/
 .pnp
 .pnp.js
 
-# Hardhat & Blockchain
-blockchain/artifacts/
-blockchain/cache/
-blockchain/typechain/
-blockchain/typechain-types/
-blockchain/coverage/
-blockchain/coverage.json
-blockchain/gasReporterOutput.json
+# Hardhat & Blockchain (Root)
+artifacts/
+cache/
+typechain/
+typechain-types/
+coverage/
+coverage.json
+gasReporterOutput.json
 
-# Frontend / Web Build Output
+# Frontend Build Output
 frontend/dist/
 frontend/dist-ssr/
 frontend/build/
@@ -22,7 +22,6 @@ frontend/build/
 .env
 .env*.local
 !.env.example
-blockchain/.env
 frontend/.env
 frontend/.env.local
 

@@ -1,22 +1,26 @@
-const hre = require("hardhat");
-const fs = require("fs");
-const path = require("path");
+import { network } from "hardhat";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
   console.log("Starting deployment of PassportRegistry...");
 
-  const [deployer] = await hre.ethers.getSigners();
+  const { ethers } = await network.create();
+  const [deployer] = await ethers.getSigners();
   console.log("Deploying contract with account:", deployer.address);
 
-  const PassportRegistry = await hre.ethers.getContractFactory("PassportRegistry");
-  const passportRegistry = await PassportRegistry.deploy();
+  const passportRegistry = await ethers.deployContract("PassportRegistry");
   await passportRegistry.waitForDeployment();
 
   const contractAddress = await passportRegistry.getAddress();
   console.log("PassportRegistry deployed to:", contractAddress);
 
   // Synchronize ABI and address to frontend contracts directory
-  const frontendContractsDir = path.join(__dirname, "../../frontend/src/contracts");
+  const frontendContractsDir = path.join(__dirname, "../frontend/src/contracts");
 
   if (!fs.existsSync(frontendContractsDir)) {
     fs.mkdirSync(frontendContractsDir, { recursive: true });
@@ -31,13 +35,13 @@ async function main() {
   console.log("Saved contract address to:", addressFilePath);
 
   // Write contract ABI
-  const contractArtifact = await hre.artifacts.readArtifact("PassportRegistry");
-  const abiFilePath = path.join(frontendContractsDir, "PassportRegistryABI.json");
-  fs.writeFileSync(
-    abiFilePath,
-    JSON.stringify(contractArtifact.abi, null, 2)
-  );
-  console.log("Saved contract ABI to:", abiFilePath);
+  const artifactPath = path.join(__dirname, "../artifacts/contracts/PassportRegistry.sol/PassportRegistry.json");
+  if (fs.existsSync(artifactPath)) {
+    const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf-8"));
+    const abiFilePath = path.join(frontendContractsDir, "PassportRegistryABI.json");
+    fs.writeFileSync(abiFilePath, JSON.stringify(artifact.abi, null, 2));
+    console.log("Saved contract ABI to:", abiFilePath);
+  }
 }
 
 main()

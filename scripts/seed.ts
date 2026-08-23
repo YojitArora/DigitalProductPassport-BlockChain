@@ -1,5 +1,3 @@
-const hre = require("hardhat");
-
 async function main() {
   console.log("Seeding script initialized. (Ready for test data once smart contract methods are implemented)");
 }
