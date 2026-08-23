@@ -1,0 +1,24 @@
+{
+  "name": "digital-product-passport-blockchain",
+  "version": "1.0.0",
+  "description": "Smart contracts and deployment scripts for Digital Product Passport System",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:ganache": "hardhat run scripts/deploy.js --network ganache",
+    "seed:local": "hardhat run scripts/seed.js --network localhost",
+    "seed:ganache": "hardhat run scripts/seed.js --network ganache",
+    "clean": "hardhat clean",
+    "node": "hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.5"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5"
+  }
+}

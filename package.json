@@ -1,0 +1,30 @@
+{
+  "name": "digital-product-passport",
+  "version": "1.0.0",
+  "description": "Blockchain-Based Digital Product Passport System",
+  "private": true,
+  "scripts": {
+    "blockchain:compile": "npm run compile --prefix blockchain",
+    "blockchain:test": "npm test --prefix blockchain",
+    "blockchain:deploy": "npm run deploy:local --prefix blockchain",
+    "blockchain:seed": "npm run seed:local --prefix blockchain",
+    "frontend:dev": "npm run dev --prefix frontend",
+    "frontend:build": "npm run build --prefix frontend",
+    "frontend:preview": "npm run preview --prefix frontend",
+    "compile": "npm run blockchain:compile",
+    "test": "npm run blockchain:test",
+    "dev": "npm run frontend:dev",
+    "build": "npm run blockchain:compile && npm run frontend:build"
+  },
+  "keywords": [
+    "blockchain",
+    "solidity",
+    "ethereum",
+    "digital-product-passport",
+    "react",
+    "vite",
+    "hardhat"
+  ],
+  "author": "",
+  "license": "MIT"
+}
