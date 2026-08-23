@@ -3,11 +3,13 @@ import { configVariable, defineConfig } from "hardhat/config";
 
 export default defineConfig({
   plugins: [hardhatToolboxMochaEthersPlugin],
+
   solidity: {
     profiles: {
       default: {
         version: "0.8.20",
         settings: {
+          viaIR: true,
           optimizer: {
             enabled: true,
             runs: 200,
@@ -17,6 +19,7 @@ export default defineConfig({
       production: {
         version: "0.8.20",
         settings: {
+          viaIR: true,
           optimizer: {
             enabled: true,
             runs: 200,
@@ -25,21 +28,25 @@ export default defineConfig({
       },
     },
   },
+
   networks: {
     hardhatMainnet: {
       type: "edr-simulated",
       chainType: "l1",
     },
+
     localhost: {
       type: "http",
       chainType: "l1",
       url: "http://127.0.0.1:8545",
     },
+
     ganache: {
       type: "http",
       chainType: "l1",
       url: "http://127.0.0.1:7545",
     },
+
     sepolia: {
       type: "http",
       chainType: "l1",

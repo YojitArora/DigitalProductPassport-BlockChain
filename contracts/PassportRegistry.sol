@@ -5,7 +5,7 @@ pragma solidity ^0.8.20;
  * @title PassportRegistry
  * @author Digital Product Passport Team
  * @notice Canonical registry smart contract for the Blockchain-Based Digital Product Passport System.
- * @dev Sprint 1 & Sprint 2: Core Authorization, Role Management, and Access Control layer (Admin, Manufacturer, Service Center).
+ * @dev Sprint 1 & Sprint 2: Core Authorization, Role Management, and Product Passport Registration & Query Layer.
  *      Follows PROJECT_SPEC_v2.md specifications and EVM storage optimization patterns.
  */
 contract PassportRegistry {
@@ -13,18 +13,27 @@ contract PassportRegistry {
     /* 1. STATE VARIABLES, STRUCTS & CONSTANTS                           */
     /* ================================================================ */
 
-    /**
-     * @notice Maximum allowed byte length for registered organization names.
-     * @dev Bounds storage gas and prevents spam data injection.
-     */
+    /// @notice Maximum allowed byte length for registered organization names (Manufacturer / Service Center)
     uint256 public constant MAX_NAME_LENGTH = 128;
+
+    /// @notice Maximum allowed byte length for product name
+    uint256 public constant MAX_PRODUCT_NAME_LENGTH = 128;
+
+    /// @notice Maximum allowed byte length for brand name
+    uint256 public constant MAX_BRAND_LENGTH = 64;
+
+    /// @notice Maximum allowed byte length for product category
+    uint256 public constant MAX_CATEGORY_LENGTH = 64;
+
+    /// @notice Maximum allowed byte length for model number
+    uint256 public constant MAX_MODEL_NUMBER_LENGTH = 64;
+
+    /// @notice Maximum allowed byte length for manufacturer serial number
+    uint256 public constant MAX_SERIAL_NUMBER_LENGTH = 64;
 
     /**
      * @notice Representation of an authorized product manufacturer entity.
-     * @dev Fields are ordered for optimal 32-byte EVM storage slot packing:
-     *      - Slot 0: `walletAddress` (20 bytes) + `approved` (1 byte) = 21 bytes (saves 1 storage slot)
-     *      - Slot 1: `registeredAt` (32 bytes)
-     *      - Slot 2: `name` (dynamic string)
+     * @dev Packed for EVM storage: Slot 0 (walletAddress + approved = 21 bytes), Slot 1 (registeredAt), Slot 2 (name).
      * @param walletAddress The Ethereum wallet address of the manufacturer
      * @param approved Whitelist approval status for product minting and warranty activation
      * @param registeredAt Block timestamp when the manufacturer was first registered
@@ -39,10 +48,7 @@ contract PassportRegistry {
 
     /**
      * @notice Representation of an authorized repair and maintenance service center entity.
-     * @dev Fields are ordered for optimal 32-byte EVM storage slot packing:
-     *      - Slot 0: `walletAddress` (20 bytes) + `approved` (1 byte) = 21 bytes (saves 1 storage slot)
-     *      - Slot 1: `registeredAt` (32 bytes)
-     *      - Slot 2: `name` (dynamic string)
+     * @dev Packed for EVM storage: Slot 0 (walletAddress + approved = 21 bytes), Slot 1 (registeredAt), Slot 2 (name).
      * @param walletAddress The Ethereum wallet address of the service center
      * @param approved Whitelist approval status for logging authenticated repair records
      * @param registeredAt Block timestamp when the service center was first registered
@@ -55,6 +61,60 @@ contract PassportRegistry {
         string name;
     }
 
+    /**
+     * @notice Representation of dynamic product warranty period.
+     * @dev Computed dynamically without storing boolean state flags.
+     * @param startTimestamp Timestamp when warranty became active (0 if inactive)
+     * @param endTimestamp Expiration timestamp of the warranty (0 if inactive)
+     */
+    struct Warranty {
+        uint256 startTimestamp;
+        uint256 endTimestamp;
+    }
+
+    /**
+     * @notice Comprehensive on-chain Digital Product Passport entity.
+     * @dev Stores current state only; history and audit trails are reconstructed from blockchain events.
+     *      Storage Slot Layout Analysis:
+     *      - Slot 0: `passportId` (32 bytes / uint256)
+     *      - Slot 1: `manufacturer` (20 bytes) + `status` (1 byte enum) = 21 bytes (packed together)
+     *      - Slot 2: `currentOwner` (20 bytes) (address cannot pack into the 11 remaining bytes of Slot 1)
+     *      - Slot 3: `manufactureDate` (32 bytes / uint256 timestamp)
+     *      - Slot 4: `createdAt` (32 bytes / uint256 timestamp)
+     *      - Slot 5: `warranty.startTimestamp` (32 bytes / uint256)
+     *      - Slot 6: `warranty.endTimestamp` (32 bytes / uint256)
+     *      - Slots 7-11: Dynamic strings (`productName`, `brand`, `category`, `modelNumber`, `serialNumber`),
+     *        each reserving a full 32-byte slot for string length/pointer.
+     *      Note: No further layout packing is measurable or beneficial without reducing timestamp precision
+     *      or altering the public API.
+     * @param passportId Unique auto-incrementing platform identifier (starts at 1)
+     * @param manufacturer Address of the authorized manufacturer who minted the passport
+     * @param currentOwner Address of the current product owner
+     * @param status Current lifecycle status of the physical product
+     * @param manufactureDate Unix timestamp of product manufacture
+     * @param createdAt Unix timestamp when the passport was registered on-chain
+     * @param warranty Warranty time window struct
+     * @param productName Full commercial product name
+     * @param brand Brand / company label
+     * @param category Product classification category
+     * @param modelNumber Manufacturer model identifier
+     * @param serialNumber Manufacturer physical serial number
+     */
+    struct Product {
+        uint256 passportId;
+        address manufacturer;
+        address currentOwner;
+        ProductStatus status;
+        uint256 manufactureDate;
+        uint256 createdAt;
+        Warranty warranty;
+        string productName;
+        string brand;
+        string category;
+        string modelNumber;
+        string serialNumber;
+    }
+
     /// @dev Internal mapping tracking platform admin privileges (address => bool)
     mapping(address => bool) private admins;
 
@@ -64,9 +124,32 @@ contract PassportRegistry {
     /// @dev Internal mapping from service center wallet address to ServiceCenter storage entity
     mapping(address => ServiceCenter) private serviceCenters;
 
+    /// @dev Internal mapping from auto-incrementing Passport ID to Product entity
+    mapping(uint256 => Product) private products;
+
+    /// @dev Internal mapping preventing duplicate (manufacturer address + serialNumber) registration
+    mapping(bytes32 => bool) private registeredSerialNumbers;
+
+    /// @dev Auto-incrementing Passport ID counter initialized at 1
+    uint256 private _nextPassportId;
+
     /* ================================================================ */
-    /* 2. ENUMS (Reserved for future sprints)                           */
+    /* 2. ENUMS                                                         */
     /* ================================================================ */
+
+    /**
+     * @notice Lifecycle status state machine for a physical product.
+     * @param Active Normal operational state
+     * @param UnderService Product is currently undergoing authorized repair/maintenance
+     * @param ReportedStolen Product reported stolen by owner or admin
+     * @param Recovered Product recovered from previous theft incident
+     */
+    enum ProductStatus {
+        Active,
+        UnderService,
+        ReportedStolen,
+        Recovered
+    }
 
     /* ================================================================ */
     /* 3. EVENTS                                                        */
@@ -110,6 +193,25 @@ contract PassportRegistry {
      */
     event ServiceCenterRevoked(address indexed serviceCenter, uint256 timestamp);
 
+    /**
+     * @notice Emitted when a new Digital Product Passport is minted and registered on-chain.
+     * @dev Exposes rich metadata for event-driven timelines and decentralized verification dashboards.
+     * @param passportId The unique auto-incrementing platform ID assigned to the product (indexed)
+     * @param manufacturer The wallet address of the manufacturer who minted the passport (indexed)
+     * @param initialOwner The wallet address of the initial product owner (indexed)
+     * @param serialNumber The manufacturer physical serial number
+     * @param productName Full commercial product name
+     * @param timestamp The block timestamp when the product was registered
+     */
+    event ProductRegistered(
+        uint256 indexed passportId,
+        address indexed manufacturer,
+        address indexed initialOwner,
+        string serialNumber,
+        string productName,
+        uint256 timestamp
+    );
+
     /* ================================================================ */
     /* 4. CUSTOM ERRORS                                                 */
     /* ================================================================ */
@@ -147,6 +249,19 @@ contract PassportRegistry {
     /// @notice Reverted when attempting to revoke a service center that is already revoked.
     /// @param serviceCenter The already revoked service center address
     error ServiceCenterAlreadyRevoked(address serviceCenter);
+
+    /// @notice Reverted when querying or operating on a Passport ID that does not exist.
+    /// @param passportId The non-existent passport ID
+    error PassportNotFound(uint256 passportId);
+
+    /// @notice Reverted when attempting to register a duplicate serial number for the same manufacturer.
+    /// @param manufacturer The manufacturer address
+    /// @param serialNumber The duplicate serial number
+    error DuplicateSerialNumber(address manufacturer, string serialNumber);
+
+    /// @notice Reverted when manufacture date is zero or in the future.
+    /// @param manufactureDate The invalid manufacture date timestamp
+    error InvalidManufactureDate(uint256 manufactureDate);
 
     /// @notice Reverted when a required string parameter is empty (0 bytes).
     /// @param fieldName The name of the empty input field
@@ -216,16 +331,27 @@ contract PassportRegistry {
         _;
     }
 
+    /**
+     * @notice Validates that a passport with the specified ID exists and has been registered.
+     * @dev Reverts with `PassportNotFound(passportId)` if the passport does not exist.
+     * @param passportId The ID to validate
+     */
+    modifier requirePassportExists(uint256 passportId) {
+        _getValidatedProduct(passportId);
+        _;
+    }
+
     /* ================================================================ */
     /* 6. CONSTRUCTOR & ADMIN FUNCTIONS                                 */
     /* ================================================================ */
 
     /**
-     * @notice Initializes the PassportRegistry and designates contract deployer as the initial platform admin.
-     * @dev Emits `AdminAdded` event with `addedBy` set to address(0) for initial genesis admin.
+     * @notice Initializes the PassportRegistry, designates contract deployer as initial admin, and initializes passport counter.
+     * @dev Initializes `_nextPassportId` to 1. Emits `AdminAdded` event for the initial admin.
      */
     constructor() {
         admins[msg.sender] = true;
+        _nextPassportId = 1;
         emit AdminAdded(msg.sender, address(0), block.timestamp);
     }
 
@@ -256,12 +382,7 @@ contract PassportRegistry {
         if (manufacturer == address(0)) {
             revert ZeroAddress();
         }
-        if (bytes(name).length == 0) {
-            revert EmptyString("name");
-        }
-        if (bytes(name).length > MAX_NAME_LENGTH) {
-            revert StringTooLong("name", MAX_NAME_LENGTH);
-        }
+        _validateStringField(name, "name", MAX_NAME_LENGTH);
         if (manufacturers[manufacturer].approved) {
             revert ManufacturerAlreadyExists(manufacturer);
         }
@@ -311,12 +432,7 @@ contract PassportRegistry {
         if (serviceCenter == address(0)) {
             revert ZeroAddress();
         }
-        if (bytes(name).length == 0) {
-            revert EmptyString("name");
-        }
-        if (bytes(name).length > MAX_NAME_LENGTH) {
-            revert StringTooLong("name", MAX_NAME_LENGTH);
-        }
+        _validateStringField(name, "name", MAX_NAME_LENGTH);
         if (serviceCenters[serviceCenter].approved) {
             revert ServiceCenterAlreadyExists(serviceCenter);
         }
@@ -357,8 +473,74 @@ contract PassportRegistry {
     }
 
     /* ================================================================ */
-    /* 7. MANUFACTURER FUNCTIONS (Reserved for future sprints)          */
+    /* 7. MANUFACTURER FUNCTIONS                                         */
     /* ================================================================ */
+
+    /**
+     * @notice Mints and registers a new Digital Product Passport on-chain.
+     * @dev Restricts execution to approved manufacturers. Generates an auto-incrementing Passport ID.
+     *      Enforces uniqueness on (msg.sender, serialNumber).
+     * @param initialOwner Wallet address of the initial product owner (cannot be address(0)).
+     * @param productName Commercial name of the product (1 to 128 bytes).
+     * @param brand Brand label or manufacturer brand identifier (1 to 64 bytes).
+     * @param category Classification category of the product (1 to 64 bytes).
+     * @param modelNumber Model code or reference number (1 to 64 bytes).
+     * @param serialNumber Physical serial number unique to the manufacturer (1 to 64 bytes).
+     * @param manufactureDate Unix timestamp of manufacturing (must be > 0 and <= block.timestamp).
+     * @return passportId The newly allocated unique Passport ID.
+     */
+    function registerProduct(
+        address initialOwner,
+        string calldata productName,
+        string calldata brand,
+        string calldata category,
+        string calldata modelNumber,
+        string calldata serialNumber,
+        uint256 manufactureDate
+    ) external onlyApprovedManufacturer returns (uint256 passportId) {
+        if (initialOwner == address(0)) {
+            revert ZeroAddress();
+        }
+        _validateStringField(productName, "productName", MAX_PRODUCT_NAME_LENGTH);
+        _validateStringField(brand, "brand", MAX_BRAND_LENGTH);
+        _validateStringField(category, "category", MAX_CATEGORY_LENGTH);
+        _validateStringField(modelNumber, "modelNumber", MAX_MODEL_NUMBER_LENGTH);
+        _validateStringField(serialNumber, "serialNumber", MAX_SERIAL_NUMBER_LENGTH);
+
+        if (manufactureDate == 0 || manufactureDate > block.timestamp) {
+            revert InvalidManufactureDate(manufactureDate);
+        }
+
+        bytes32 serialHash = keccak256(abi.encodePacked(msg.sender, serialNumber));
+        if (registeredSerialNumbers[serialHash]) {
+            revert DuplicateSerialNumber(msg.sender, serialNumber);
+        }
+        registeredSerialNumbers[serialHash] = true;
+
+        passportId = _nextPassportId++;
+
+        Product storage p = products[passportId];
+        p.passportId = passportId;
+        p.manufacturer = msg.sender;
+        p.currentOwner = initialOwner;
+        p.status = ProductStatus.Active;
+        p.manufactureDate = manufactureDate;
+        p.createdAt = block.timestamp;
+        p.productName = productName;
+        p.brand = brand;
+        p.category = category;
+        p.modelNumber = modelNumber;
+        p.serialNumber = serialNumber;
+
+        emit ProductRegistered(
+            passportId,
+            msg.sender,
+            initialOwner,
+            serialNumber,
+            productName,
+            block.timestamp
+        );
+    }
 
     /* ================================================================ */
     /* 8. SERVICE CENTER FUNCTIONS (Reserved for future sprints)        */
@@ -422,7 +604,111 @@ contract PassportRegistry {
         return serviceCenters[account];
     }
 
+    /**
+     * @notice Checks if a product passport exists for a given Passport ID.
+     * @dev Gas-free view call.
+     * @param passportId The ID to query.
+     * @return True if the passport exists, false otherwise.
+     */
+    function passportExists(uint256 passportId) external view returns (bool) {
+        return _passportExists(passportId);
+    }
+
+    /**
+     * @notice Retrieves the full Product passport entity for a given Passport ID.
+     * @dev Reverts with `PassportNotFound` if the passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return Product struct containing all product passport metadata and current status.
+     */
+    function getProduct(uint256 passportId) external view returns (Product memory) {
+        return _getValidatedProduct(passportId);
+    }
+
+    /**
+     * @notice Queries the current legal owner address of a passport.
+     * @dev Reverts with `PassportNotFound` if the passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return The wallet address of the current owner.
+     */
+    function getCurrentOwner(uint256 passportId) external view returns (address) {
+        return _getValidatedProduct(passportId).currentOwner;
+    }
+
+    /**
+     * @notice Queries the current lifecycle status enum of a product.
+     * @dev Reverts with `PassportNotFound` if the passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return ProductStatus enum value (Active, UnderService, ReportedStolen, Recovered).
+     */
+    function getProductStatus(uint256 passportId) external view returns (ProductStatus) {
+        return _getValidatedProduct(passportId).status;
+    }
+
+    /**
+     * @notice Computes whether the warranty for a product passport is currently valid and active.
+     * @dev Dynamic calculation evaluated against `block.timestamp`. Returns false if passport does not exist or has no warranty.
+     * @param passportId The numeric Passport ID.
+     * @return True if warranty is active as of the current block timestamp, false otherwise.
+     */
+    function isWarrantyActive(uint256 passportId) external view returns (bool) {
+        if (!_passportExists(passportId)) {
+            return false;
+        }
+        Warranty memory w = products[passportId].warranty;
+        return w.endTimestamp > 0 && block.timestamp <= w.endTimestamp && (w.startTimestamp == 0 || block.timestamp >= w.startTimestamp);
+    }
+
+    /**
+     * @notice Returns the next Passport ID that will be assigned to a new product.
+     * @dev Gas-free view call.
+     * @return The next auto-incrementing Passport ID.
+     */
+    function getNextPassportId() external view returns (uint256) {
+        return _nextPassportId;
+    }
+
     /* ================================================================ */
     /* 11. INTERNAL/PRIVATE HELPER FUNCTIONS                            */
     /* ================================================================ */
+
+    /**
+     * @dev Internal helper to determine whether a passport ID has been minted.
+     * @param passportId The numeric Passport ID to check.
+     * @return True if the ID is within minted bounds and has a non-zero manufacturer address.
+     */
+    function _passportExists(uint256 passportId) internal view returns (bool) {
+        return passportId > 0 && passportId < _nextPassportId && products[passportId].manufacturer != address(0);
+    }
+
+    /**
+     * @dev Internal helper to retrieve a validated storage reference to a Product.
+     *      Reverts with `PassportNotFound` if the passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return productRef Direct storage pointer to the validated Product entity.
+     */
+    function _getValidatedProduct(uint256 passportId) internal view returns (Product storage productRef) {
+        if (!_passportExists(passportId)) {
+            revert PassportNotFound(passportId);
+        }
+        return products[passportId];
+    }
+
+    /**
+     * @dev Internal helper to validate string length constraints and non-emptiness.
+     * @param val The string value to validate.
+     * @param fieldName The name of the input field for error reporting.
+     * @param maxLen The maximum allowed byte length for this field.
+     */
+    function _validateStringField(
+        string calldata val,
+        string memory fieldName,
+        uint256 maxLen
+    ) internal pure {
+        if (bytes(val).length == 0) {
+            revert EmptyString(fieldName);
+        }
+        if (bytes(val).length > maxLen) {
+            revert StringTooLong(fieldName, maxLen);
+        }
+    }
 }
