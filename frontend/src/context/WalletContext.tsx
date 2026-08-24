@@ -2,25 +2,31 @@
  * @file WalletContext.tsx
  * @notice Centralized Web3 Wallet Context and Provider for MetaMask and EIP-1193 compatible wallets.
  *
- * ## Wallet Initialization & Lifecycle Flow:
+ * ## Wallet Initialization & Disconnect Lifecycle Flow:
  *
- * 1. **Automatic Silent Reconnection (`eth_accounts`)**:
- *    - On initial component mount, the provider queries `ethereum.request({ method: "eth_accounts" })`.
- *    - Unlike `eth_requestAccounts`, `eth_accounts` checks whether the user has previously authorized the application
- *      without popping up a MetaMask connection prompt.
- *    - If an authorized account is present, `updateWalletState` immediately initializes the `BrowserProvider`,
- *      active `JsonRpcSigner`, current `chainId`, and connected `account`.
+ * 1. **User-Controlled Disconnection State (`dpp_wallet_disconnected`)**:
+ *    - When the user explicitly clicks `disconnect()`, a persistence flag `dpp_wallet_disconnected` is stored in `localStorage`.
+ *    - All React wallet states (`account`, `signer`, `provider`, `chainId`) are cleared immediately.
+ *    - The application remains disconnected across page reloads and re-renders until the user explicitly clicks `connect()`.
  *
- * 2. **Account Change Handling (`accountsChanged` event)**:
- *    - Subscribes to the EIP-1193 `accountsChanged` event emitted whenever the user switches or locks accounts in MetaMask.
- *    - If the user locks their wallet or disconnects all accounts (`accounts.length === 0`), `disconnect()` is invoked,
- *      clearing all local state and signers.
- *    - If a new account is selected (`accounts[0]`), `updateWalletState` is triggered to bind the new account and signer.
+ * 2. **Explicit Connection (`connect()`)**:
+ *    - Clears the `dpp_wallet_disconnected` persistence flag.
+ *    - Invokes `eth_requestAccounts` to prompt MetaMask connection modal for user approval.
+ *    - Sets up the active `BrowserProvider`, `JsonRpcSigner`, and `account`.
  *
- * 3. **Chain & Network Change Handling (`chainChanged` event)**:
- *    - Subscribes to the EIP-1193 `chainChanged` event emitted when the user switches networks (e.g. from Ganache to Mainnet).
- *    - As recommended by MetaMask, re-initializes provider state for the active account to avoid stale chain state.
- *    - Evaluates `isSupportedNetwork(chainId)` against configured local (Ganache 1337/5777, Hardhat 31337) and deployment networks.
+ * 3. **Automatic Silent Reconnection (`eth_accounts`)**:
+ *    - On initial component mount, queries `ethereum.request({ method: "eth_accounts" })`.
+ *    - If the user previously disconnected (`dpp_wallet_disconnected === "true"`), silent reconnection is skipped,
+ *      ensuring the app stays disconnected as requested.
+ *    - If no explicit disconnect flag is present and the wallet is already authorized, initializes wallet state.
+ *
+ * 4. **Account Change Handling (`accountsChanged` event)**:
+ *    - If the user disconnects all accounts or locks MetaMask (`accounts.length === 0`), `disconnect()` is invoked.
+ *    - If the user is currently connected and switches to a different account, updates wallet state to the newly active account.
+ *    - If the user is in an explicitly disconnected state, ignores external background events until `connect()` is clicked.
+ *
+ * 5. **Chain & Network Change Handling (`chainChanged` event)**:
+ *    - Re-initializes provider state for the active account when network changes to avoid stale chain state.
  */
 
 import React, {
@@ -38,6 +44,8 @@ import {
   switchOrAddNetwork,
 } from "../services/provider";
 import { formatContractError } from "../services/errorHandler";
+
+const DISCONNECTED_STORAGE_KEY = "dpp_wallet_disconnected";
 
 export interface WalletContextValue {
   account: string | null;
@@ -110,6 +118,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   /**
    * Prompts MetaMask connection modal for explicit user approval.
+   * Clears the user-disconnected flag to allow subsequent session reconnection.
    */
   const connect = useCallback(async () => {
     if (!isMetaMaskAvailable()) {
@@ -123,6 +132,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setError(null);
 
     try {
+      // Clear explicit disconnect preference upon user action
+      try {
+        localStorage.removeItem(DISCONNECTED_STORAGE_KEY);
+      } catch (e) {
+        // Handle localStorage restrictions if any
+      }
+
       const ethereum = (window as any).ethereum;
       const accounts: string[] = await ethereum.request({
         method: "eth_requestAccounts",
@@ -143,8 +159,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   /**
    * Resets and clears connected wallet state locally.
+   * Sets the user-disconnected flag to prevent immediate silent reconnection.
    */
   const disconnect = useCallback(() => {
+    try {
+      localStorage.setItem(DISCONNECTED_STORAGE_KEY, "true");
+    } catch (e) {
+      // Handle localStorage restrictions if any
+    }
+
     setAccount(null);
     setSigner(null);
     setProvider(null);
@@ -171,11 +194,20 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   );
 
   /**
-   * Step 1: Automatic Reconnection Flow.
-   * Silently detects already connected accounts using `eth_accounts` without triggering a modal.
+   * Step 1: Automatic Silent Reconnection Flow.
+   * Checks if user previously explicitly disconnected. If not, queries `eth_accounts`.
    */
   useEffect(() => {
     if (!isMetaMaskAvailable()) return;
+
+    // Do not auto-reconnect if user explicitly chose to disconnect
+    try {
+      if (localStorage.getItem(DISCONNECTED_STORAGE_KEY) === "true") {
+        return;
+      }
+    } catch (e) {
+      // Proceed if localStorage is not accessible
+    }
 
     const ethereum = (window as any).ethereum;
 
@@ -183,7 +215,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       .request({ method: "eth_accounts" })
       .then((accounts: string[]) => {
         if (accounts && accounts.length > 0) {
-          updateWalletState(accounts[0]);
+          // Double check disconnect flag before updating
+          let isDisconnected = false;
+          try {
+            isDisconnected = localStorage.getItem(DISCONNECTED_STORAGE_KEY) === "true";
+          } catch (e) {}
+
+          if (!isDisconnected) {
+            updateWalletState(accounts[0]);
+          }
         }
       })
       .catch((err: any) => {
@@ -203,7 +243,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (accounts.length === 0) {
         disconnect();
       } else {
-        updateWalletState(accounts[0]);
+        // If user is currently disconnected by preference, don't auto-connect on account change
+        let isDisconnected = false;
+        try {
+          isDisconnected = localStorage.getItem(DISCONNECTED_STORAGE_KEY) === "true";
+        } catch (e) {}
+
+        if (!isDisconnected || account !== null) {
+          updateWalletState(accounts[0]);
+        }
       }
     };
 
