@@ -10,6 +10,7 @@ export default defineConfig({
         version: "0.8.20",
         settings: {
           viaIR: true,
+          evmVersion: "paris",
           optimizer: {
             enabled: true,
             runs: 200,
@@ -20,6 +21,7 @@ export default defineConfig({
         version: "0.8.20",
         settings: {
           viaIR: true,
+          evmVersion: "paris",
           optimizer: {
             enabled: true,
             runs: 200,
