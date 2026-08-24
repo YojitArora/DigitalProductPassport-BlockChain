@@ -19,7 +19,7 @@ export const PublicVerifyPage: React.FC = () => {
   const { passportId } = useParams<{ passportId?: string }>();
   const navigate = useNavigate();
 
-  const [searchId, setSearchId] = useState<string>(passportId || "1");
+  const [searchId, setSearchId] = useState<string>(passportId ? passportId.trim() : "");
   const [product, setProduct] = useState<Product | null>(null);
   const [verifiedAt, setVerifiedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -28,7 +28,7 @@ export const PublicVerifyPage: React.FC = () => {
   const fetchPassport = useCallback(async (idStr: string) => {
     const trimmed = idStr.trim();
     if (!trimmed || isNaN(Number(trimmed)) || Number(trimmed) <= 0) {
-      setError("Please enter a valid numeric Passport ID (e.g. 1, 2, 3).");
+      setError("Please enter a valid numeric Passport ID (e.g. 1, 2, 3...).");
       setProduct(null);
       setVerifiedAt(null);
       return;
@@ -40,11 +40,13 @@ export const PublicVerifyPage: React.FC = () => {
     try {
       const p = await PassportService.getProduct(BigInt(trimmed));
       setProduct(p);
-      setVerifiedAt(new Date().toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }));
+      setVerifiedAt(
+        new Date().toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
     } catch (err: any) {
       setProduct(null);
       setVerifiedAt(null);
@@ -55,18 +57,32 @@ export const PublicVerifyPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (passportId) {
-      setSearchId(passportId);
-      fetchPassport(passportId);
+    if (passportId && passportId.trim()) {
+      const trimmed = passportId.trim();
+      setSearchId(trimmed);
+      fetchPassport(trimmed);
     } else {
-      fetchPassport("1");
+      setSearchId("");
+      setProduct(null);
+      setVerifiedAt(null);
+      setError(null);
+      setLoading(false);
     }
   }, [passportId, fetchPassport]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchId.trim()) {
-      navigate(`/verify/${searchId.trim()}`);
+    const trimmed = searchId.trim();
+    if (trimmed) {
+      if (passportId === trimmed) {
+        fetchPassport(trimmed);
+      } else {
+        navigate(`/verify/${trimmed}`);
+      }
+    } else {
+      setError("Please enter a numeric Passport ID to verify.");
+      setProduct(null);
+      setVerifiedAt(null);
     }
   };
 
@@ -167,7 +183,7 @@ export const PublicVerifyPage: React.FC = () => {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !searchId.trim()}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -178,8 +194,8 @@ export const PublicVerifyPage: React.FC = () => {
             borderRadius: "var(--radius-md)",
             fontWeight: 600,
             fontSize: "0.95rem",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1,
+            cursor: loading || !searchId.trim() ? "not-allowed" : "pointer",
+            opacity: loading || !searchId.trim() ? 0.7 : 1,
           }}
         >
           {loading ? (
