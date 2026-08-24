@@ -5,8 +5,8 @@ pragma solidity ^0.8.20;
  * @title PassportRegistry
  * @author Digital Product Passport Team
  * @notice Canonical registry smart contract for the Blockchain-Based Digital Product Passport System.
- * @dev Sprint 1, 2, 3 & 4: Authorization, Role Management, Product Registration, Two-Step Ownership Transfer,
- *      and Service / Maintenance Lifecycle Layer.
+ * @dev Sprint 1, 2, 3, 4 & 5: Authorization, Role Management, Product Registration, Two-Step Ownership Transfer,
+ *      Service / Maintenance Lifecycle, Dynamic Warranty Activation, and Theft / Recovery Lifecycle.
  *      Follows PROJECT_SPEC_v2.md specifications, pull-payment / commit-reveal patterns, and event-driven architecture.
  */
 contract PassportRegistry {
@@ -67,9 +67,11 @@ contract PassportRegistry {
 
     /**
      * @notice Representation of dynamic product warranty period.
-     * @dev Computed dynamically without storing boolean state flags.
-     * @param startTimestamp Timestamp when warranty became active (0 if inactive)
-     * @param endTimestamp Expiration timestamp of the warranty (0 if inactive)
+     * @dev Computed dynamically against `block.timestamp` without storing an active boolean flag.
+     *      Warranty duration is measured in whole days (converted to seconds via `durationDays * 1 days`).
+     *      `startTimestamp` and `endTimestamp` are canonical Unix epoch timestamps in seconds.
+     * @param startTimestamp Unix timestamp when warranty became active (0 if unactivated)
+     * @param endTimestamp Unix timestamp when warranty expires (0 if unactivated)
      */
     struct Warranty {
         uint256 startTimestamp;
@@ -260,6 +262,50 @@ contract PassportRegistry {
     );
 
     /**
+     * @notice Emitted when a product's warranty is activated on-chain by its registering manufacturer.
+     * @dev Serves as part of the immutable Digital Product Passport lifecycle audit trail.
+     *      Warranty activation timestamps and duration are recorded permanently in the event log.
+     * @param passportId The unique platform ID of the product (indexed for log filtering)
+     * @param manufacturer The wallet address of the manufacturer activating the warranty (indexed for log filtering)
+     * @param startTimestamp The block timestamp when warranty became active
+     * @param endTimestamp The computed expiration timestamp of the warranty
+     */
+    event WarrantyActivated(
+        uint256 indexed passportId,
+        address indexed manufacturer,
+        uint256 startTimestamp,
+        uint256 endTimestamp
+    );
+
+    /**
+     * @notice Emitted when a product is reported stolen by its owner.
+     * @dev Serves as part of the immutable Digital Product Passport lifecycle audit trail.
+     *      Records the timestamp of theft report and blocks unauthorized ownership transfers and servicing.
+     * @param passportId The unique platform ID of the product (indexed for log filtering)
+     * @param reportedBy The wallet address of the owner reporting theft (indexed for log filtering)
+     * @param timestamp The block timestamp when theft was reported
+     */
+    event ProductReportedStolen(
+        uint256 indexed passportId,
+        address indexed reportedBy,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Emitted when a previously stolen product is reported recovered by its owner.
+     * @dev Serves as part of the immutable Digital Product Passport lifecycle audit trail.
+     *      Records the restoration of operational capabilities while preserving permanent theft history.
+     * @param passportId The unique platform ID of the product (indexed for log filtering)
+     * @param recoveredBy The wallet address of the owner reporting recovery (indexed for log filtering)
+     * @param timestamp The block timestamp when recovery was reported
+     */
+    event ProductRecovered(
+        uint256 indexed passportId,
+        address indexed recoveredBy,
+        uint256 timestamp
+    );
+
+    /**
      * @notice Emitted when a product owner initiates a two-step ownership transfer to a new recipient.
      * @dev Serves as part of the immutable on-chain audit trail for ownership history.
      *      All historical transfer timelines and provenance are intentionally reconstructed from events.
@@ -426,10 +472,6 @@ contract PassportRegistry {
     /// @param caller The unauthorized caller address
     error NotPendingRecipient(uint256 passportId, address caller);
 
-    /// @notice Reverted when an operation is blocked because the product is reported stolen.
-    /// @param passportId The numeric Passport ID
-    error ProductReportedStolen(uint256 passportId);
-
     /// @notice Reverted when attempting to start service on a product that is already in UnderService status.
     /// @param passportId The numeric Passport ID
     error AlreadyUnderService(uint256 passportId);
@@ -441,6 +483,26 @@ contract PassportRegistry {
     /// @notice Reverted when an approved service center attempts to complete service started by a different service center.
     /// @param passportId The numeric Passport ID
     error NotCurrentServiceCenter(uint256 passportId);
+
+    /// @notice Reverted when attempting to activate warranty on a product that already has an active or expired warranty.
+    /// @param passportId The numeric Passport ID
+    error WarrantyAlreadyActivated(uint256 passportId);
+
+    /// @notice Reverted when attempting to activate warranty with 0 duration days.
+    error InvalidWarrantyDuration();
+
+    /// @notice Reverted when an unauthorized manufacturer attempts an action on a product they did not register.
+    /// @param passportId The numeric Passport ID
+    /// @param caller The unauthorized manufacturer address
+    error NotProductManufacturer(uint256 passportId, address caller);
+
+    /// @notice Reverted when attempting to report a product stolen that is already in ReportedStolen status.
+    /// @param passportId The numeric Passport ID
+    error AlreadyReportedStolen(uint256 passportId);
+
+    /// @notice Reverted when attempting to report a product recovered that is not in ReportedStolen status.
+    /// @param passportId The numeric Passport ID
+    error ProductNotReportedStolen(uint256 passportId);
 
     /* ================================================================ */
     /* 5. MODIFIERS (ACCESS CONTROL)                                    */
@@ -475,6 +537,19 @@ contract PassportRegistry {
     modifier onlyManufacturer() {
         if (!manufacturers[msg.sender].approved) {
             revert Unauthorized();
+        }
+        _;
+    }
+
+    /**
+     * @notice Restricts function execution to the authorized manufacturer that originally registered the product passport.
+     * @dev Reverts with `NotProductManufacturer(passportId, msg.sender)` if caller is not the registering manufacturer.
+     * @param passportId The numeric Passport ID.
+     */
+    modifier onlyProductManufacturer(uint256 passportId) {
+        Product storage product = _getValidatedProduct(passportId);
+        if (msg.sender != product.manufacturer) {
+            revert NotProductManufacturer(passportId, msg.sender);
         }
         _;
     }
@@ -515,12 +590,12 @@ contract PassportRegistry {
 
     /**
      * @notice Restricts function execution when a product is flagged as ReportedStolen.
-     * @dev Reverts with `ProductReportedStolen(passportId)` if status is `ReportedStolen`.
+     * @dev Reverts with `AlreadyReportedStolen(passportId)` if status is `ReportedStolen`.
      * @param passportId The numeric Passport ID to check.
      */
     modifier notReportedStolen(uint256 passportId) {
         if (_getValidatedProduct(passportId).status == ProductStatus.ReportedStolen) {
-            revert ProductReportedStolen(passportId);
+            revert AlreadyReportedStolen(passportId);
         }
         _;
     }
@@ -717,7 +792,7 @@ contract PassportRegistry {
         p.passportId = passportId;
         p.manufacturer = msg.sender;
         p.currentOwner = initialOwner;
-        p.status = ProductStatus.Active;
+        _updateProductStatus(p, ProductStatus.Active);
         p.previousOperationalStatus = ProductStatus.Active;
         p.manufactureDate = manufactureDate;
         p.createdAt = block.timestamp;
@@ -735,6 +810,37 @@ contract PassportRegistry {
             productName,
             block.timestamp
         );
+    }
+
+    /**
+     * @notice Activates product warranty for a specified duration in whole days.
+     * @dev Restricts execution to the approved manufacturer that originally registered the product. Can only be activated once.
+     *      Duration is specified in whole days and converted to Unix timestamp bounds (`durationDays * 1 days`).
+     *      Warranty validity is evaluated dynamically through `isWarrantyActive()` without storing an on-chain boolean flag.
+     * @param passportId The unique platform ID of the product passport.
+     * @param durationDays Warranty duration in whole days (must be > 0).
+     */
+    function activateWarranty(uint256 passportId, uint256 durationDays)
+        external
+        onlyApprovedManufacturer
+        onlyProductManufacturer(passportId)
+    {
+        Product storage product = _getValidatedProduct(passportId);
+
+        if (product.warranty.endTimestamp > 0) {
+            revert WarrantyAlreadyActivated(passportId);
+        }
+        if (durationDays == 0) {
+            revert InvalidWarrantyDuration();
+        }
+
+        uint256 startTimestamp = block.timestamp;
+        uint256 endTimestamp = block.timestamp + (durationDays * 1 days);
+
+        product.warranty.startTimestamp = startTimestamp;
+        product.warranty.endTimestamp = endTimestamp;
+
+        emit WarrantyActivated(passportId, msg.sender, startTimestamp, endTimestamp);
     }
 
     /* ================================================================ */
@@ -758,7 +864,7 @@ contract PassportRegistry {
         }
 
         product.previousOperationalStatus = product.status;
-        product.status = ProductStatus.UnderService;
+        _updateProductStatus(product, ProductStatus.UnderService);
         product.currentServiceCenter = msg.sender;
 
         emit ServiceStarted(passportId, msg.sender, block.timestamp);
@@ -779,7 +885,7 @@ contract PassportRegistry {
 
         _validateStringField(description, "description", MAX_REPAIR_DESCRIPTION_LENGTH);
 
-        product.status = product.previousOperationalStatus;
+        _updateProductStatus(product, product.previousOperationalStatus);
         product.currentServiceCenter = address(0);
         product.repairCount++;
         product.lastRepairTimestamp = block.timestamp;
@@ -867,6 +973,46 @@ contract PassportRegistry {
         delete product.pendingTransfer;
 
         emit OwnershipTransferCancelled(passportId, msg.sender, recipient, block.timestamp);
+    }
+
+    /**
+     * @notice Reports a physical product passport as stolen.
+     * @dev Restricts execution to current product owner. Blocks future transfers and servicing until recovered.
+     * @param passportId The unique platform ID of the product passport.
+     */
+    function reportStolen(uint256 passportId)
+        external
+        onlyProductOwner(passportId)
+    {
+        Product storage product = _getValidatedProduct(passportId);
+
+        if (product.status == ProductStatus.ReportedStolen) {
+            revert AlreadyReportedStolen(passportId);
+        }
+
+        _updateProductStatus(product, ProductStatus.ReportedStolen);
+
+        emit ProductReportedStolen(passportId, msg.sender, block.timestamp);
+    }
+
+    /**
+     * @notice Reports a previously stolen product as recovered.
+     * @dev Restricts execution to current product owner. Transitions status to Recovered (does NOT revert to Active).
+     * @param passportId The unique platform ID of the product passport.
+     */
+    function reportRecovered(uint256 passportId)
+        external
+        onlyProductOwner(passportId)
+    {
+        Product storage product = _getValidatedProduct(passportId);
+
+        if (product.status != ProductStatus.ReportedStolen) {
+            revert ProductNotReportedStolen(passportId);
+        }
+
+        _updateProductStatus(product, ProductStatus.Recovered);
+
+        emit ProductRecovered(passportId, msg.sender, block.timestamp);
     }
 
     /* ================================================================ */
@@ -964,8 +1110,29 @@ contract PassportRegistry {
     }
 
     /**
+     * @notice Retrieves the full Warranty window struct for a product passport.
+     * @dev Gas-free view call. Reverts with `PassportNotFound` if passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return Warranty struct containing startTimestamp and endTimestamp.
+     */
+    function getWarranty(uint256 passportId) external view returns (Warranty memory) {
+        return _getValidatedProduct(passportId).warranty;
+    }
+
+    /**
+     * @notice Queries the exact warranty expiration timestamp for a product passport.
+     * @dev Gas-free view call. Reverts with `PassportNotFound` if passport does not exist. Returns 0 if warranty is unactivated.
+     * @param passportId The numeric Passport ID.
+     * @return Unix timestamp when warranty expires (0 if unactivated).
+     */
+    function getWarrantyEndTimestamp(uint256 passportId) external view returns (uint256) {
+        return _getValidatedProduct(passportId).warranty.endTimestamp;
+    }
+
+    /**
      * @notice Computes whether the warranty for a product passport is currently valid and active.
-     * @dev Dynamic calculation evaluated against `block.timestamp`. Returns false if passport does not exist or has no warranty.
+     * @dev Dynamic calculation evaluated against `block.timestamp`. No stored boolean flag exists.
+     *      Returns false if passport does not exist or has no warranty activated (`endTimestamp == 0`).
      * @param passportId The numeric Passport ID.
      * @return True if warranty is active as of the current block timestamp, false otherwise.
      */
@@ -1060,6 +1227,15 @@ contract PassportRegistry {
             revert PassportNotFound(passportId);
         }
         return products[passportId];
+    }
+
+    /**
+     * @dev Internal helper to update the product status enum.
+     * @param product Direct storage reference to the Product entity.
+     * @param newStatus The target ProductStatus lifecycle enum value.
+     */
+    function _updateProductStatus(Product storage product, ProductStatus newStatus) internal {
+        product.status = newStatus;
     }
 
     /**

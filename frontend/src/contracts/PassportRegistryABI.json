@@ -23,6 +23,17 @@
         "type": "uint256"
       }
     ],
+    "name": "AlreadyReportedStolen",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
     "name": "AlreadyUnderService",
     "type": "error"
   },
@@ -62,6 +73,11 @@
       }
     ],
     "name": "InvalidManufactureDate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidWarrantyDuration",
     "type": "error"
   },
   {
@@ -141,6 +157,22 @@
         "internalType": "uint256",
         "name": "passportId",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "NotProductManufacturer",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
       }
     ],
     "name": "NotUnderService",
@@ -165,7 +197,7 @@
         "type": "uint256"
       }
     ],
-    "name": "ProductReportedStolen",
+    "name": "ProductNotReportedStolen",
     "type": "error"
   },
   {
@@ -236,6 +268,17 @@
   {
     "inputs": [],
     "name": "Unauthorized",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "WarrantyAlreadyActivated",
     "type": "error"
   },
   {
@@ -417,6 +460,31 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "recoveredBy",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProductRecovered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "manufacturer",
         "type": "address"
       },
@@ -446,6 +514,31 @@
       }
     ],
     "name": "ProductRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "reportedBy",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProductReportedStolen",
     "type": "event"
   },
   {
@@ -580,6 +673,37 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "manufacturer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "startTimestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "endTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "WarrantyActivated",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "MAX_BRAND_LENGTH",
     "outputs": [
@@ -679,6 +803,24 @@
       }
     ],
     "name": "acceptTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "durationDays",
+        "type": "uint256"
+      }
+    ],
+    "name": "activateWarranty",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1077,6 +1219,56 @@
         "type": "uint256"
       }
     ],
+    "name": "getWarranty",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "startTimestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "endTimestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct PassportRegistry.Warranty",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWarrantyEndTimestamp",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
     "name": "hasPendingTransfer",
     "outputs": [
       {
@@ -1301,6 +1493,32 @@
       }
     ],
     "name": "registerServiceCenter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "reportRecovered",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "reportStolen",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

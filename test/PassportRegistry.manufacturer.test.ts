@@ -517,4 +517,154 @@ describe("PassportRegistry - Manufacturer & Product Passport System", function (
       expect(await passportRegistry.isWarrantyActive(999n)).to.be.false;
     });
   });
+
+  describe("Warranty Activation & Dynamic Computation (Sprint 5)", function () {
+    const validProduct = {
+      productName: "Heritage Chronometer",
+      brand: "Acme Watches",
+      category: "Timepieces",
+      modelNumber: "AC-2024-LUX",
+      serialNumber: "SN-998877",
+      manufactureDate: 1704067200, // Jan 1, 2024
+    };
+
+    it("should allow registering manufacturer to activate warranty successfully and emit WarrantyActivated", async function () {
+      const { passportRegistry, ethers, manufacturer1, initialOwner } = await deployFixture();
+
+      await passportRegistry.connect(manufacturer1).registerProduct(
+        initialOwner.address,
+        validProduct.productName,
+        validProduct.brand,
+        validProduct.category,
+        validProduct.modelNumber,
+        validProduct.serialNumber,
+        validProduct.manufactureDate
+      );
+
+      // Before activation
+      expect(await passportRegistry.isWarrantyActive(1n)).to.be.false;
+      const initialWarranty = await passportRegistry.getWarranty(1n);
+      expect(initialWarranty.startTimestamp).to.equal(0n);
+      expect(initialWarranty.endTimestamp).to.equal(0n);
+      expect(await passportRegistry.getWarrantyEndTimestamp(1n)).to.equal(0n);
+
+      const durationDays = 365n;
+      const tx = await passportRegistry.connect(manufacturer1).activateWarranty(1n, durationDays);
+
+      const latestBlock = await ethers.provider.getBlock("latest");
+      const blockTimestamp = BigInt(latestBlock!.timestamp);
+      const expectedEnd = blockTimestamp + durationDays * 86400n;
+
+      await expect(tx)
+        .to.emit(passportRegistry, "WarrantyActivated")
+        .withArgs(1n, manufacturer1.address, blockTimestamp, expectedEnd);
+
+      expect(await passportRegistry.isWarrantyActive(1n)).to.be.true;
+      const updatedWarranty = await passportRegistry.getWarranty(1n);
+      expect(updatedWarranty.startTimestamp).to.equal(blockTimestamp);
+      expect(updatedWarranty.endTimestamp).to.equal(expectedEnd);
+      expect(await passportRegistry.getWarrantyEndTimestamp(1n)).to.equal(expectedEnd);
+    });
+
+    it("should revert with WarrantyAlreadyActivated on duplicate activation attempt", async function () {
+      const { passportRegistry, manufacturer1, initialOwner } = await deployFixture();
+
+      await passportRegistry.connect(manufacturer1).registerProduct(
+        initialOwner.address,
+        validProduct.productName,
+        validProduct.brand,
+        validProduct.category,
+        validProduct.modelNumber,
+        validProduct.serialNumber,
+        validProduct.manufactureDate
+      );
+
+      await passportRegistry.connect(manufacturer1).activateWarranty(1n, 365n);
+
+      await expect(
+        passportRegistry.connect(manufacturer1).activateWarranty(1n, 180n)
+      ).to.be.revertedWithCustomError(passportRegistry, "WarrantyAlreadyActivated")
+        .withArgs(1n);
+    });
+
+    it("should revert with InvalidWarrantyDuration when durationDays is 0", async function () {
+      const { passportRegistry, manufacturer1, initialOwner } = await deployFixture();
+
+      await passportRegistry.connect(manufacturer1).registerProduct(
+        initialOwner.address,
+        validProduct.productName,
+        validProduct.brand,
+        validProduct.category,
+        validProduct.modelNumber,
+        validProduct.serialNumber,
+        validProduct.manufactureDate
+      );
+
+      await expect(
+        passportRegistry.connect(manufacturer1).activateWarranty(1n, 0n)
+      ).to.be.revertedWithCustomError(passportRegistry, "InvalidWarrantyDuration");
+    });
+
+    it("should revert when an unauthorized caller or non-registering manufacturer attempts activation", async function () {
+      const { passportRegistry, manufacturer1, manufacturer2, initialOwner, otherAccount } =
+        await deployFixture();
+
+      await passportRegistry.connect(manufacturer1).registerProduct(
+        initialOwner.address,
+        validProduct.productName,
+        validProduct.brand,
+        validProduct.category,
+        validProduct.modelNumber,
+        validProduct.serialNumber,
+        validProduct.manufactureDate
+      );
+
+      // Non-registering approved manufacturer
+      await expect(
+        passportRegistry.connect(manufacturer2).activateWarranty(1n, 365n)
+      ).to.be.revertedWithCustomError(passportRegistry, "NotProductManufacturer")
+        .withArgs(1n, manufacturer2.address);
+
+      // Unauthorized non-manufacturer
+      await expect(
+        passportRegistry.connect(otherAccount).activateWarranty(1n, 365n)
+      ).to.be.revertedWithCustomError(passportRegistry, "Unauthorized");
+    });
+
+    it("should return false for isWarrantyActive after warranty expiration", async function () {
+      const { passportRegistry, ethers, manufacturer1, initialOwner } = await deployFixture();
+
+      await passportRegistry.connect(manufacturer1).registerProduct(
+        initialOwner.address,
+        validProduct.productName,
+        validProduct.brand,
+        validProduct.category,
+        validProduct.modelNumber,
+        validProduct.serialNumber,
+        validProduct.manufactureDate
+      );
+
+      const durationDays = 10n; // 10 days
+      await passportRegistry.connect(manufacturer1).activateWarranty(1n, durationDays);
+      expect(await passportRegistry.isWarrantyActive(1n)).to.be.true;
+
+      // Fast forward time by 11 days
+      await ethers.provider.send("evm_increaseTime", [11 * 86400]);
+      await ethers.provider.send("evm_mine", []);
+
+      expect(await passportRegistry.isWarrantyActive(1n)).to.be.false;
+    });
+
+    it("should revert with PassportNotFound when querying warranty on non-existent ID", async function () {
+      const { passportRegistry } = await deployFixture();
+
+      await expect(passportRegistry.getWarranty(999n))
+        .to.be.revertedWithCustomError(passportRegistry, "PassportNotFound")
+        .withArgs(999n);
+
+      await expect(passportRegistry.getWarrantyEndTimestamp(999n))
+        .to.be.revertedWithCustomError(passportRegistry, "PassportNotFound")
+        .withArgs(999n);
+    });
+  });
 });

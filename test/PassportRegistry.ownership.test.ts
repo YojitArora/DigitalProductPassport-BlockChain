@@ -102,49 +102,19 @@ describe("PassportRegistry - Two-Step Ownership Transfer System (Sprint 3)", fun
         .withArgs(1n);
     });
 
-    it("should revert with ProductReportedStolen when product is in ReportedStolen status", async function () {
-      const { passportRegistry, ethers, owner1, buyer } = await deployFixture();
+    it("should revert with AlreadyReportedStolen when product is in ReportedStolen status", async function () {
+      const { passportRegistry, owner1, buyer } = await deployFixture();
 
-      // Product mapping is at slot 3.
-      // Slot for passportId 1 = keccak256(abi.encode(1, 3))
-      const mappingSlot = 3;
-      const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-      const productBaseSlot = ethers.keccak256(
-        abiCoder.encode(["uint256", "uint256"], [1n, mappingSlot])
-      );
-
-      // Slot 2 from productBaseSlot holds currentOwner (20 bytes) + status (1 byte enum at byte offset 20).
-      // Slot 2 integer = BigInt(productBaseSlot) + 2n
-      const slot2 = ethers.toBeHex(BigInt(productBaseSlot) + 2n, 32);
-
-      // Get current slot value first
-      const provider = ethers.provider;
-      const currentSlot2 = await provider.send("eth_getStorageAt", [
-        await passportRegistry.getAddress(),
-        slot2,
-        "latest",
-      ]);
-
-      // Set byte 20 (from right: offset 20 = 40 hex chars from right) to 0x02
-      // Hex string has 64 chars after '0x'. Byte 0 (lowest) is at index 62-63. Byte 20 is at index 22-23.
-      const rawHex = currentSlot2.replace("0x", "").padStart(64, "0");
-      const modifiedHex =
-        rawHex.substring(0, 22) + "02" + rawHex.substring(24);
-      const newSlot2Value = "0x" + modifiedHex;
-
-      await provider.send("hardhat_setStorageAt", [
-        await passportRegistry.getAddress(),
-        slot2,
-        newSlot2Value,
-      ]);
+      // Report product stolen
+      await passportRegistry.connect(owner1).reportStolen(1n);
 
       // Verify status is ReportedStolen (2)
       expect(await passportRegistry.getProductStatus(1n)).to.equal(2);
 
-      // Attempting initiateTransfer should revert with ProductReportedStolen(1)
+      // Attempting initiateTransfer should revert with AlreadyReportedStolen(1)
       await expect(
         passportRegistry.connect(owner1).initiateTransfer(1n, buyer.address)
-      ).to.be.revertedWithCustomError(passportRegistry, "ProductReportedStolen")
+      ).to.be.revertedWithCustomError(passportRegistry, "AlreadyReportedStolen")
         .withArgs(1n);
     });
   });

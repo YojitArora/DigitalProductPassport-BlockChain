@@ -363,40 +363,17 @@ describe("PassportRegistry - Service Center & Repair Lifecycle System", function
       ).to.emit(passportRegistry, "ServiceCompleted");
     });
 
-    it("should revert with ProductReportedStolen when startService is called on a stolen product", async function () {
-      const { passportRegistry, ethers, serviceCenter1 } = await deployFixture();
+    it("should revert with AlreadyReportedStolen when startService is called on a stolen product", async function () {
+      const { passportRegistry, owner, serviceCenter1 } = await deployFixture();
 
-      // Set product 1 status to ReportedStolen (2) via storage slot manipulation
-      const mappingSlot = 3;
-      const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-      const productBaseSlot = ethers.keccak256(
-        abiCoder.encode(["uint256", "uint256"], [1n, mappingSlot])
-      );
-      const slot2 = ethers.toBeHex(BigInt(productBaseSlot) + 2n, 32);
+      // Report product stolen
+      await passportRegistry.connect(owner).reportStolen(1n);
 
-      const provider = ethers.provider;
-      const currentSlot2 = await provider.send("eth_getStorageAt", [
-        await passportRegistry.getAddress(),
-        slot2,
-        "latest",
-      ]);
-
-      const rawHex = currentSlot2.replace("0x", "").padStart(64, "0");
-      const modifiedHex =
-        rawHex.substring(0, 22) + "02" + rawHex.substring(24);
-      const newSlot2Value = "0x" + modifiedHex;
-
-      await provider.send("hardhat_setStorageAt", [
-        await passportRegistry.getAddress(),
-        slot2,
-        newSlot2Value,
-      ]);
-
-      expect(await passportRegistry.getProductStatus(1n)).to.equal(2);
+      expect(await passportRegistry.getProductStatus(1n)).to.equal(2); // ReportedStolen
 
       await expect(
         passportRegistry.connect(serviceCenter1).startService(1n)
-      ).to.be.revertedWithCustomError(passportRegistry, "ProductReportedStolen")
+      ).to.be.revertedWithCustomError(passportRegistry, "AlreadyReportedStolen")
         .withArgs(1n);
     });
   });
