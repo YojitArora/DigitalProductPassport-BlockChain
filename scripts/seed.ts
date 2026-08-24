@@ -59,7 +59,7 @@ async function main() {
   }
 
   // 3. Mint Demo Passport #1 if nextPassportId is 1
-  const nextId = await passportRegistry.nextPassportId();
+  const nextId = await passportRegistry.getNextPassportId();
   if (nextId === 1n) {
     console.log("\n3. Minting Demo Passport #1 ('Aura ChronoMaster Pro')...");
     const manufactureDate = Math.floor(Date.now() / 1000) - 86400 * 30; // 30 days ago
