@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { PassportService } from "../services/passportService";
 import { Product } from "../types";
 import ProductCard from "../components/ProductCard";
+import LifecycleTimeline from "../components/timeline/LifecycleTimeline";
 import EmptyState from "../components/EmptyState";
 import {
   LuSearch,
@@ -72,7 +73,7 @@ export const PublicVerifyPage: React.FC = () => {
   return (
     <div
       style={{
-        maxWidth: "900px",
+        maxWidth: "960px",
         margin: "0 auto",
         padding: "2.5rem 1.5rem",
         display: "flex",
@@ -269,10 +270,11 @@ export const PublicVerifyPage: React.FC = () => {
         />
       )}
 
-      {/* Product Passport Result Card */}
+      {/* Product Passport Result Card & Lifecycle Timeline */}
       {product && !loading && (
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
           <ProductCard product={product} showActions={true} />
+          <LifecycleTimeline product={product} />
         </div>
       )}
 

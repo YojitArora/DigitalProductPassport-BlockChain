@@ -1,34 +1,98 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { WalletProvider } from "./context/WalletContext";
+import { AuthProvider } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
+import RoleProtectedRoute from "./components/RoleProtectedRoute";
+
+// Pages
 import PublicVerifyPage from "./pages/PublicVerifyPage";
-import DashboardPage from "./pages/DashboardPage";
+import LoginPage from "./pages/LoginPage";
+import OperationsCenterPage from "./pages/OperationsCenterPage";
+import AdminPortalPage from "./pages/AdminPortalPage";
+import ManufacturerPortalPage from "./pages/ManufacturerPortalPage";
+import ServiceCenterPortalPage from "./pages/ServiceCenterPortalPage";
+import OwnerPortalPage from "./pages/OwnerPortalPage";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 export const App: React.FC = () => {
   return (
     <Router>
       <WalletProvider>
-        <div
-          style={{
-            minHeight: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            background: "var(--bg-primary, #0a0e17)",
-            color: "var(--text-primary, #f9fafb)",
-          }}
-        >
-          <Navbar />
+        <AuthProvider>
+          <div
+            style={{
+              minHeight: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              background: "var(--bg-primary, #0a0e17)",
+              color: "var(--text-primary, #f9fafb)",
+            }}
+          >
+            <Navbar />
 
-          <main style={{ flex: 1 }}>
-            <Routes>
-              <Route path="/" element={<PublicVerifyPage />} />
-              <Route path="/verify" element={<PublicVerifyPage />} />
-              <Route path="/verify/:passportId" element={<PublicVerifyPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-            </Routes>
-          </main>
-        </div>
+            <main style={{ flex: 1 }}>
+              <Routes>
+                {/* Public Verification Routes */}
+                <Route path="/" element={<PublicVerifyPage />} />
+                <Route path="/verify" element={<PublicVerifyPage />} />
+                <Route path="/verify/:passportId" element={<PublicVerifyPage />} />
+
+                {/* Authentication & Authorization Routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+                {/* Authenticated Operations Center */}
+                <Route
+                  path="/operations"
+                  element={
+                    <ProtectedRoute>
+                      <OperationsCenterPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Protected Role-Based Portals */}
+                <Route
+                  path="/operations/admin"
+                  element={
+                    <RoleProtectedRoute role="admin">
+                      <AdminPortalPage />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/operations/manufacturer"
+                  element={
+                    <RoleProtectedRoute role="manufacturer">
+                      <ManufacturerPortalPage />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/operations/service"
+                  element={
+                    <RoleProtectedRoute role="serviceCenter">
+                      <ServiceCenterPortalPage />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/operations/owner"
+                  element={
+                    <RoleProtectedRoute role="owner">
+                      <OwnerPortalPage />
+                    </RoleProtectedRoute>
+                  }
+                />
+
+                {/* Catch-all Fallback */}
+                <Route path="*" element={<Navigate to="/verify" replace />} />
+              </Routes>
+            </main>
+          </div>
+        </AuthProvider>
       </WalletProvider>
     </Router>
   );

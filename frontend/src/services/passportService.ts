@@ -342,6 +342,60 @@ export class PassportService {
     }
   }
 
+  /**
+   * Retrieves all minted product passports from the blockchain.
+   */
+  static async getAllProducts(): Promise<Product[]> {
+    try {
+      const nextId = await this.getNextPassportId();
+      const count = Number(nextId);
+      if (count <= 1) return [];
+
+      const productPromises: Promise<Product>[] = [];
+      for (let i = 1; i < count; i++) {
+        productPromises.push(this.getProduct(BigInt(i)));
+      }
+
+      const results = await Promise.allSettled(productPromises);
+      return results
+        .filter((res): res is PromiseFulfilledResult<Product> => res.status === "fulfilled")
+        .map((res) => res.value);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Queries all product passports currently owned by a specific wallet.
+   */
+  static async getProductsByOwner(ownerAddress: string): Promise<Product[]> {
+    if (!ownerAddress) return [];
+    const all = await this.getAllProducts();
+    return all.filter(
+      (p) => p.currentOwner.toLowerCase() === ownerAddress.toLowerCase()
+    );
+  }
+
+  /**
+   * Queries all product passports registered by a specific manufacturer.
+   */
+  static async getProductsByManufacturer(manufacturerAddress: string): Promise<Product[]> {
+    if (!manufacturerAddress) return [];
+    const all = await this.getAllProducts();
+    return all.filter(
+      (p) => p.manufacturer.toLowerCase() === manufacturerAddress.toLowerCase()
+    );
+  }
+
+  /**
+   * Checks whether a wallet currently holds on-chain ownership of at least one product.
+   */
+  static async hasOwnedProducts(account: string): Promise<boolean> {
+    if (!account) return false;
+    const owned = await this.getProductsByOwner(account);
+    return owned.length > 0;
+  }
+
   /* ================================================================ */
   /* 4. OWNERSHIP & TRANSFER LIFECYCLE                                */
   /* ================================================================ */

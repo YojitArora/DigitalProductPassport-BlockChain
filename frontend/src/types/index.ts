@@ -155,3 +155,23 @@ export interface TimelineEvent {
   details?: Record<string, any>;
   transactionHash: string;
 }
+
+/**
+ * Verified blockchain roles for an authenticated wallet identity.
+ */
+export interface UserRoles {
+  isAdmin: boolean;
+  isManufacturer: boolean;
+  isServiceCenter: boolean;
+  isOwner: boolean;
+}
+
+/**
+ * Authenticated enterprise session state.
+ */
+export interface AuthSession {
+  account: string;
+  signature: string;
+  roles: UserRoles;
+  authenticatedAt: number;
+}
