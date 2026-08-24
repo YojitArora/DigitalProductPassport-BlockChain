@@ -1,9 +1,14 @@
-import { BrowserProvider, JsonRpcSigner, Contract } from "ethers";
+import { BrowserProvider, JsonRpcProvider, JsonRpcSigner, Contract } from "ethers";
 import contractAddressData from "../contracts/contract-address.json";
 import contractAbiData from "../contracts/PassportRegistryABI.json";
 
 export const CONTRACT_ADDRESS: string = contractAddressData.address;
 export const CONTRACT_ABI = contractAbiData;
+
+/**
+ * Default fallback RPC URL for local development and wallet-free read-only queries.
+ */
+export const DEFAULT_RPC_URL = "http://127.0.0.1:8545";
 
 /**
  * Common local and development network definitions.
@@ -62,6 +67,21 @@ export function getBrowserProvider(): BrowserProvider {
 }
 
 /**
+ * Retrieves a read-only provider (BrowserProvider if available, otherwise JsonRpcProvider to local RPC).
+ * Allows public verification pages to function without wallet requirements.
+ */
+export function getReadOnlyProvider(): BrowserProvider | JsonRpcProvider {
+  if (isMetaMaskAvailable()) {
+    try {
+      return new BrowserProvider((window as any).ethereum, "any");
+    } catch {
+      // Fallback to JSON-RPC
+    }
+  }
+  return new JsonRpcProvider(DEFAULT_RPC_URL);
+}
+
+/**
  * Retrieves the current JsonRpcSigner from the active BrowserProvider.
  */
 export async function getSigner(): Promise<JsonRpcSigner> {
@@ -71,10 +91,10 @@ export async function getSigner(): Promise<JsonRpcSigner> {
 
 /**
  * Instantiates the PassportRegistry contract with a signer or provider.
- * @param signerOrProvider Optional signer or provider. Defaults to active signer if available, or browser provider.
+ * @param signerOrProvider Optional signer or provider. Defaults to active signer if available, or read-only provider.
  */
 export async function getPassportContract(
-  signerOrProvider?: JsonRpcSigner | BrowserProvider
+  signerOrProvider?: JsonRpcSigner | BrowserProvider | JsonRpcProvider
 ): Promise<Contract> {
   if (signerOrProvider) {
     return new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signerOrProvider);
@@ -84,7 +104,7 @@ export async function getPassportContract(
     const signer = await getSigner();
     return new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
   } catch {
-    const provider = getBrowserProvider();
+    const provider = getReadOnlyProvider();
     return new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
   }
 }
@@ -105,7 +125,6 @@ export async function switchOrAddNetwork(targetChainId: number = 1337): Promise<
       params: [{ chainId: hexChainId }],
     });
   } catch (switchError: any) {
-    // Error code 4902 means the chain has not been added to MetaMask
     if (switchError.code === 4902 || switchError?.data?.originalError?.code === 4902) {
       const net = SUPPORTED_NETWORKS[targetChainId] || {
         chainName: `Local Network (${targetChainId})`,
