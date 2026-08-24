@@ -94,7 +94,45 @@
         "type": "uint256"
       }
     ],
+    "name": "NoPendingTransfer",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "NotPendingRecipient",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
     "name": "PassportNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProductReportedStolen",
     "type": "error"
   },
   {
@@ -144,6 +182,22 @@
       }
     ],
     "name": "StringTooLong",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "TransferAlreadyPending",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TransferToSelf",
     "type": "error"
   },
   {
@@ -223,6 +277,99 @@
       }
     ],
     "name": "ManufacturerRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "OwnershipTransferAccepted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "OwnershipTransferCancelled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "OwnershipTransferRequested",
     "type": "event"
   },
   {
@@ -393,12 +540,38 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "acceptTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newAdmin",
         "type": "address"
       }
     ],
     "name": "addAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "cancelTransfer",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -484,6 +657,42 @@
         "type": "uint256"
       }
     ],
+    "name": "getPendingTransfer",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "requestedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "exists",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PassportRegistry.PendingTransfer",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
     "name": "getProduct",
     "outputs": [
       {
@@ -533,6 +742,28 @@
             ],
             "internalType": "struct PassportRegistry.Warranty",
             "name": "warranty",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "requestedAt",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "exists",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct PassportRegistry.PendingTransfer",
+            "name": "pendingTransfer",
             "type": "tuple"
           },
           {
@@ -627,6 +858,43 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      }
+    ],
+    "name": "hasPendingTransfer",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "passportId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "initiateTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

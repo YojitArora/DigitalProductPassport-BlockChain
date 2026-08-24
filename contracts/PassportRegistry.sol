@@ -5,8 +5,8 @@ pragma solidity ^0.8.20;
  * @title PassportRegistry
  * @author Digital Product Passport Team
  * @notice Canonical registry smart contract for the Blockchain-Based Digital Product Passport System.
- * @dev Sprint 1 & Sprint 2: Core Authorization, Role Management, and Product Passport Registration & Query Layer.
- *      Follows PROJECT_SPEC_v2.md specifications and EVM storage optimization patterns.
+ * @dev Sprint 1, 2 & 3: Authorization, Role Management, Product Registration & Two-Step Ownership Transfer Layer.
+ *      Follows PROJECT_SPEC_v2.md specifications, pull-payment / commit-reveal patterns, and EVM storage optimization.
  */
 contract PassportRegistry {
     /* ================================================================ */
@@ -73,20 +73,37 @@ contract PassportRegistry {
     }
 
     /**
+     * @notice Representation of an active two-step ownership transfer request.
+     * @dev Stored per product; cleared upon acceptance or cancellation.
+     *      `requestedAt` exists in contract storage ONLY while the transfer is active/pending.
+     *      Historical transfer records and ownership provenance are intentionally event-driven
+     *      and must be reconstructed by indexers from `OwnershipTransferRequested`,
+     *      `OwnershipTransferAccepted`, and `OwnershipTransferCancelled` events.
+     * @param to Ethereum address of the intended recipient
+     * @param requestedAt Block timestamp when the transfer was initiated (ephemeral on-chain state)
+     * @param exists Flag indicating whether a pending transfer is currently active
+     */
+    struct PendingTransfer {
+        address to;
+        uint256 requestedAt;
+        bool exists;
+    }
+
+    /**
      * @notice Comprehensive on-chain Digital Product Passport entity.
      * @dev Stores current state only; history and audit trails are reconstructed from blockchain events.
      *      Storage Slot Layout Analysis:
      *      - Slot 0: `passportId` (32 bytes / uint256)
      *      - Slot 1: `manufacturer` (20 bytes) + `status` (1 byte enum) = 21 bytes (packed together)
-     *      - Slot 2: `currentOwner` (20 bytes) (address cannot pack into the 11 remaining bytes of Slot 1)
+     *      - Slot 2: `currentOwner` (20 bytes)
      *      - Slot 3: `manufactureDate` (32 bytes / uint256 timestamp)
      *      - Slot 4: `createdAt` (32 bytes / uint256 timestamp)
      *      - Slot 5: `warranty.startTimestamp` (32 bytes / uint256)
      *      - Slot 6: `warranty.endTimestamp` (32 bytes / uint256)
-     *      - Slots 7-11: Dynamic strings (`productName`, `brand`, `category`, `modelNumber`, `serialNumber`),
+     *      - Slot 7: `pendingTransfer.to` (20 bytes) + `pendingTransfer.exists` (1 byte) = 21 bytes (packed)
+     *      - Slot 8: `pendingTransfer.requestedAt` (32 bytes / uint256)
+     *      - Slots 9-13: Dynamic strings (`productName`, `brand`, `category`, `modelNumber`, `serialNumber`),
      *        each reserving a full 32-byte slot for string length/pointer.
-     *      Note: No further layout packing is measurable or beneficial without reducing timestamp precision
-     *      or altering the public API.
      * @param passportId Unique auto-incrementing platform identifier (starts at 1)
      * @param manufacturer Address of the authorized manufacturer who minted the passport
      * @param currentOwner Address of the current product owner
@@ -94,6 +111,7 @@ contract PassportRegistry {
      * @param manufactureDate Unix timestamp of product manufacture
      * @param createdAt Unix timestamp when the passport was registered on-chain
      * @param warranty Warranty time window struct
+     * @param pendingTransfer Current pending two-step ownership transfer struct
      * @param productName Full commercial product name
      * @param brand Brand / company label
      * @param category Product classification category
@@ -108,6 +126,7 @@ contract PassportRegistry {
         uint256 manufactureDate;
         uint256 createdAt;
         Warranty warranty;
+        PendingTransfer pendingTransfer;
         string productName;
         string brand;
         string category;
@@ -212,6 +231,53 @@ contract PassportRegistry {
         uint256 timestamp
     );
 
+    /**
+     * @notice Emitted when a product owner initiates a two-step ownership transfer to a new recipient.
+     * @dev Serves as part of the immutable on-chain audit trail for ownership history.
+     *      All historical transfer timelines and provenance are intentionally reconstructed from events.
+     * @param passportId The unique platform ID of the product (indexed for log filtering)
+     * @param from The current owner initiating the transfer (indexed for log filtering)
+     * @param to The designated recipient address (indexed for log filtering)
+     * @param timestamp The block timestamp when the transfer was requested
+     */
+    event OwnershipTransferRequested(
+        uint256 indexed passportId,
+        address indexed from,
+        address indexed to,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Emitted when a designated recipient accepts an ownership transfer, completing the transfer.
+     * @dev Serves as the canonical immutable event recording the change of legal product ownership.
+     *      Ownership history is intentionally event-driven and not retained in contract storage arrays.
+     * @param passportId The unique platform ID of the product (indexed for log filtering)
+     * @param from The previous owner address (indexed for log filtering)
+     * @param to The new owner address (indexed for log filtering)
+     * @param timestamp The block timestamp when the transfer was accepted
+     */
+    event OwnershipTransferAccepted(
+        uint256 indexed passportId,
+        address indexed from,
+        address indexed to,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Emitted when an in-flight ownership transfer is cancelled by the current owner.
+     * @dev Serves as part of the immutable event audit trail recording revoked or aborted transfers.
+     * @param passportId The unique platform ID of the product (indexed for log filtering)
+     * @param from The current owner who cancelled the transfer (indexed for log filtering)
+     * @param to The recipient address whose pending transfer was revoked (indexed for log filtering)
+     * @param timestamp The block timestamp when the transfer was cancelled
+     */
+    event OwnershipTransferCancelled(
+        uint256 indexed passportId,
+        address indexed from,
+        address indexed to,
+        uint256 timestamp
+    );
+
     /* ================================================================ */
     /* 4. CUSTOM ERRORS                                                 */
     /* ================================================================ */
@@ -272,6 +338,26 @@ contract PassportRegistry {
     /// @param maxLength The maximum allowed byte length for this field
     error StringTooLong(string fieldName, uint256 maxLength);
 
+    /// @notice Reverted when a product owner attempts to transfer ownership to their own address.
+    error TransferToSelf();
+
+    /// @notice Reverted when an ownership transfer is initiated while another transfer is already pending.
+    /// @param passportId The numeric Passport ID
+    error TransferAlreadyPending(uint256 passportId);
+
+    /// @notice Reverted when attempting to accept or cancel a transfer on a passport with no pending transfer.
+    /// @param passportId The numeric Passport ID
+    error NoPendingTransfer(uint256 passportId);
+
+    /// @notice Reverted when a caller other than the designated recipient attempts to accept a pending transfer.
+    /// @param passportId The numeric Passport ID
+    /// @param caller The unauthorized caller address
+    error NotPendingRecipient(uint256 passportId, address caller);
+
+    /// @notice Reverted when an operation is blocked because the product is reported stolen.
+    /// @param passportId The numeric Passport ID
+    error ProductReportedStolen(uint256 passportId);
+
     /* ================================================================ */
     /* 5. MODIFIERS (ACCESS CONTROL)                                    */
     /* ================================================================ */
@@ -327,6 +413,30 @@ contract PassportRegistry {
     modifier onlyServiceCenter() {
         if (!serviceCenters[msg.sender].approved) {
             revert Unauthorized();
+        }
+        _;
+    }
+
+    /**
+     * @notice Restricts function execution to the registered current owner of a product passport.
+     * @dev Reverts with `Unauthorized()` if `msg.sender` is not the current owner.
+     * @param passportId The numeric Passport ID to check.
+     */
+    modifier onlyProductOwner(uint256 passportId) {
+        if (msg.sender != _getValidatedProduct(passportId).currentOwner) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    /**
+     * @notice Restricts function execution when a product is flagged as ReportedStolen.
+     * @dev Reverts with `ProductReportedStolen(passportId)` if status is `ReportedStolen`.
+     * @param passportId The numeric Passport ID to check.
+     */
+    modifier notReportedStolen(uint256 passportId) {
+        if (_getValidatedProduct(passportId).status == ProductStatus.ReportedStolen) {
+            revert ProductReportedStolen(passportId);
         }
         _;
     }
@@ -547,8 +657,78 @@ contract PassportRegistry {
     /* ================================================================ */
 
     /* ================================================================ */
-    /* 9. OWNER FUNCTIONS (Reserved for future sprints)                 */
+    /* 9. OWNER FUNCTIONS                                               */
     /* ================================================================ */
+
+    /**
+     * @notice Initiates a two-step ownership transfer to a designated recipient address.
+     * @dev Restricts caller to current owner. Enforces recipient validation, no active transfer, and product not stolen.
+     * @param passportId The unique platform ID of the product.
+     * @param recipient The Ethereum wallet address of the designated new owner.
+     */
+    function initiateTransfer(uint256 passportId, address recipient)
+        external
+        onlyProductOwner(passportId)
+        notReportedStolen(passportId)
+    {
+        if (recipient == address(0)) {
+            revert ZeroAddress();
+        }
+        if (recipient == msg.sender) {
+            revert TransferToSelf();
+        }
+
+        Product storage product = _getValidatedProduct(passportId);
+        if (product.pendingTransfer.exists) {
+            revert TransferAlreadyPending(passportId);
+        }
+
+        product.pendingTransfer = PendingTransfer({
+            to: recipient,
+            requestedAt: block.timestamp,
+            exists: true
+        });
+
+        emit OwnershipTransferRequested(passportId, msg.sender, recipient, block.timestamp);
+    }
+
+    /**
+     * @notice Accepts a pending ownership transfer, making the caller the new legal current owner.
+     * @dev Restricts caller to the designated pending recipient. Clears pending transfer and updates owner.
+     * @param passportId The unique platform ID of the product.
+     */
+    function acceptTransfer(uint256 passportId) external {
+        Product storage product = _getValidatedProduct(passportId);
+        PendingTransfer storage pending = _requirePendingTransfer(product, passportId);
+
+        if (msg.sender != pending.to) {
+            revert NotPendingRecipient(passportId, msg.sender);
+        }
+
+        address previousOwner = product.currentOwner;
+        product.currentOwner = msg.sender;
+        delete product.pendingTransfer;
+
+        emit OwnershipTransferAccepted(passportId, previousOwner, msg.sender, block.timestamp);
+    }
+
+    /**
+     * @notice Cancels an active pending ownership transfer before it has been accepted.
+     * @dev Restricts caller to the current product owner. Clears pending transfer.
+     * @param passportId The unique platform ID of the product.
+     */
+    function cancelTransfer(uint256 passportId)
+        external
+        onlyProductOwner(passportId)
+    {
+        Product storage product = _getValidatedProduct(passportId);
+        PendingTransfer storage pending = _requirePendingTransfer(product, passportId);
+
+        address recipient = pending.to;
+        delete product.pendingTransfer;
+
+        emit OwnershipTransferCancelled(passportId, msg.sender, recipient, block.timestamp);
+    }
 
     /* ================================================================ */
     /* 10. PUBLIC VIEW FUNCTIONS                                        */
@@ -659,6 +839,26 @@ contract PassportRegistry {
     }
 
     /**
+     * @notice Retrieves the current pending ownership transfer details for a product passport.
+     * @dev Gas-free view call. Reverts with `PassportNotFound` if passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return PendingTransfer struct containing recipient address, request timestamp, and existence flag.
+     */
+    function getPendingTransfer(uint256 passportId) external view returns (PendingTransfer memory) {
+        return _getValidatedProduct(passportId).pendingTransfer;
+    }
+
+    /**
+     * @notice Checks whether a product passport currently has an active pending ownership transfer.
+     * @dev Gas-free view call. Reverts with `PassportNotFound` if passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return True if a pending transfer is active, false otherwise.
+     */
+    function hasPendingTransfer(uint256 passportId) external view returns (bool) {
+        return _getValidatedProduct(passportId).pendingTransfer.exists;
+    }
+
+    /**
      * @notice Returns the next Passport ID that will be assigned to a new product.
      * @dev Gas-free view call.
      * @return The next auto-incrementing Passport ID.
@@ -691,6 +891,24 @@ contract PassportRegistry {
             revert PassportNotFound(passportId);
         }
         return products[passportId];
+    }
+
+    /**
+     * @dev Internal helper to validate and retrieve an active PendingTransfer on a Product.
+     *      Reverts with `NoPendingTransfer(passportId)` if no transfer is currently in-flight.
+     * @param product The storage reference to the Product entity being inspected.
+     * @param passportId The numeric Passport ID for error reporting.
+     * @return transferRef Direct storage pointer to the active PendingTransfer struct.
+     */
+    function _requirePendingTransfer(Product storage product, uint256 passportId)
+        internal
+        view
+        returns (PendingTransfer storage transferRef)
+    {
+        if (!product.pendingTransfer.exists) {
+            revert NoPendingTransfer(passportId);
+        }
+        return product.pendingTransfer;
     }
 
     /**
