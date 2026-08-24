@@ -7,17 +7,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function main() {
-  console.log("Starting deployment of PassportRegistry...");
+  console.log("====================================================");
+  console.log(" Starting Deployment: Digital Product Passport");
+  console.log("====================================================");
 
   const { ethers } = await network.create();
   const [deployer] = await ethers.getSigners();
-  console.log("Deploying contract with account:", deployer.address);
+  const balance = await ethers.provider.getBalance(deployer.address);
 
+  console.log(`Deployer Address : ${deployer.address}`);
+  console.log(`Account Balance  : ${ethers.formatEther(balance)} ETH`);
+
+  console.log("\nDeploying PassportRegistry contract...");
   const passportRegistry = await ethers.deployContract("PassportRegistry");
   await passportRegistry.waitForDeployment();
 
   const contractAddress = await passportRegistry.getAddress();
-  console.log("PassportRegistry deployed to:", contractAddress);
+  console.log(`PassportRegistry successfully deployed to: ${contractAddress}`);
 
   // Synchronize ABI and address to frontend contracts directory
   const frontendContractsDir = path.join(__dirname, "../frontend/src/contracts");
@@ -32,7 +38,7 @@ async function main() {
     addressFilePath,
     JSON.stringify({ address: contractAddress }, null, 2)
   );
-  console.log("Saved contract address to:", addressFilePath);
+  console.log(`\n✓ Synchronized contract address -> ${addressFilePath}`);
 
   // Write contract ABI
   const artifactPath = path.join(__dirname, "../artifacts/contracts/PassportRegistry.sol/PassportRegistry.json");
@@ -40,8 +46,12 @@ async function main() {
     const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf-8"));
     const abiFilePath = path.join(frontendContractsDir, "PassportRegistryABI.json");
     fs.writeFileSync(abiFilePath, JSON.stringify(artifact.abi, null, 2));
-    console.log("Saved contract ABI to:", abiFilePath);
+    console.log(`✓ Synchronized contract ABI     -> ${abiFilePath}`);
   }
+
+  console.log("====================================================");
+  console.log(" Deployment Completed Successfully!");
+  console.log("====================================================\n");
 }
 
 main()
