@@ -21,9 +21,9 @@ export declare namespace PassportRegistry {
     export type WarrantyStructOutput = [startTimestamp: bigint, endTimestamp: bigint] & {startTimestamp: bigint, endTimestamp: bigint }
   
 
-    export type ProductStruct = {passportId: BigNumberish, manufacturer: AddressLike, currentOwner: AddressLike, status: BigNumberish, manufactureDate: BigNumberish, createdAt: BigNumberish, warranty: PassportRegistry.WarrantyStruct, pendingTransfer: PassportRegistry.PendingTransferStruct, productName: string, brand: string, category: string, modelNumber: string, serialNumber: string}
+    export type ProductStruct = {passportId: BigNumberish, manufacturer: AddressLike, currentOwner: AddressLike, status: BigNumberish, previousOperationalStatus: BigNumberish, currentServiceCenter: AddressLike, manufactureDate: BigNumberish, createdAt: BigNumberish, repairCount: BigNumberish, lastRepairTimestamp: BigNumberish, warranty: PassportRegistry.WarrantyStruct, pendingTransfer: PassportRegistry.PendingTransferStruct, productName: string, brand: string, category: string, modelNumber: string, serialNumber: string}
 
-    export type ProductStructOutput = [passportId: bigint, manufacturer: string, currentOwner: string, status: bigint, manufactureDate: bigint, createdAt: bigint, warranty: PassportRegistry.WarrantyStructOutput, pendingTransfer: PassportRegistry.PendingTransferStructOutput, productName: string, brand: string, category: string, modelNumber: string, serialNumber: string] & {passportId: bigint, manufacturer: string, currentOwner: string, status: bigint, manufactureDate: bigint, createdAt: bigint, warranty: PassportRegistry.WarrantyStructOutput, pendingTransfer: PassportRegistry.PendingTransferStructOutput, productName: string, brand: string, category: string, modelNumber: string, serialNumber: string }
+    export type ProductStructOutput = [passportId: bigint, manufacturer: string, currentOwner: string, status: bigint, previousOperationalStatus: bigint, currentServiceCenter: string, manufactureDate: bigint, createdAt: bigint, repairCount: bigint, lastRepairTimestamp: bigint, warranty: PassportRegistry.WarrantyStructOutput, pendingTransfer: PassportRegistry.PendingTransferStructOutput, productName: string, brand: string, category: string, modelNumber: string, serialNumber: string] & {passportId: bigint, manufacturer: string, currentOwner: string, status: bigint, previousOperationalStatus: bigint, currentServiceCenter: string, manufactureDate: bigint, createdAt: bigint, repairCount: bigint, lastRepairTimestamp: bigint, warranty: PassportRegistry.WarrantyStructOutput, pendingTransfer: PassportRegistry.PendingTransferStructOutput, productName: string, brand: string, category: string, modelNumber: string, serialNumber: string }
   
 
     export type ServiceCenterStruct = {walletAddress: AddressLike, approved: boolean, registeredAt: BigNumberish, name: string}
@@ -33,31 +33,36 @@ export declare namespace PassportRegistry {
     }
 
   export interface PassportRegistryInterface extends Interface {
-    getFunction(nameOrSignature: "MAX_BRAND_LENGTH" | "MAX_CATEGORY_LENGTH" | "MAX_MODEL_NUMBER_LENGTH" | "MAX_NAME_LENGTH" | "MAX_PRODUCT_NAME_LENGTH" | "MAX_SERIAL_NUMBER_LENGTH" | "acceptTransfer" | "addAdmin" | "cancelTransfer" | "getCurrentOwner" | "getManufacturer" | "getNextPassportId" | "getPendingTransfer" | "getProduct" | "getProductStatus" | "getServiceCenter" | "hasPendingTransfer" | "initiateTransfer" | "isAdmin" | "isApprovedManufacturer" | "isApprovedServiceCenter" | "isWarrantyActive" | "passportExists" | "registerManufacturer" | "registerProduct" | "registerServiceCenter" | "revokeManufacturer" | "revokeServiceCenter"): FunctionFragment;
+    getFunction(nameOrSignature: "MAX_BRAND_LENGTH" | "MAX_CATEGORY_LENGTH" | "MAX_MODEL_NUMBER_LENGTH" | "MAX_NAME_LENGTH" | "MAX_PRODUCT_NAME_LENGTH" | "MAX_REPAIR_DESCRIPTION_LENGTH" | "MAX_SERIAL_NUMBER_LENGTH" | "acceptTransfer" | "addAdmin" | "cancelTransfer" | "completeService" | "getCurrentOwner" | "getLastRepairTimestamp" | "getManufacturer" | "getNextPassportId" | "getPendingTransfer" | "getProduct" | "getProductStatus" | "getRepairCount" | "getServiceCenter" | "hasPendingTransfer" | "initiateTransfer" | "isAdmin" | "isApprovedManufacturer" | "isApprovedServiceCenter" | "isUnderService" | "isWarrantyActive" | "passportExists" | "registerManufacturer" | "registerProduct" | "registerServiceCenter" | "revokeManufacturer" | "revokeServiceCenter" | "startService"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "AdminAdded" | "ManufacturerRegistered" | "ManufacturerRevoked" | "OwnershipTransferAccepted" | "OwnershipTransferCancelled" | "OwnershipTransferRequested" | "ProductRegistered" | "ServiceCenterRegistered" | "ServiceCenterRevoked"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "AdminAdded" | "ManufacturerRegistered" | "ManufacturerRevoked" | "OwnershipTransferAccepted" | "OwnershipTransferCancelled" | "OwnershipTransferRequested" | "ProductRegistered" | "RepairAdded" | "ServiceCenterRegistered" | "ServiceCenterRevoked" | "ServiceCompleted" | "ServiceStarted"): EventFragment;
 
     encodeFunctionData(functionFragment: 'MAX_BRAND_LENGTH', values?: undefined): string;
 encodeFunctionData(functionFragment: 'MAX_CATEGORY_LENGTH', values?: undefined): string;
 encodeFunctionData(functionFragment: 'MAX_MODEL_NUMBER_LENGTH', values?: undefined): string;
 encodeFunctionData(functionFragment: 'MAX_NAME_LENGTH', values?: undefined): string;
 encodeFunctionData(functionFragment: 'MAX_PRODUCT_NAME_LENGTH', values?: undefined): string;
+encodeFunctionData(functionFragment: 'MAX_REPAIR_DESCRIPTION_LENGTH', values?: undefined): string;
 encodeFunctionData(functionFragment: 'MAX_SERIAL_NUMBER_LENGTH', values?: undefined): string;
 encodeFunctionData(functionFragment: 'acceptTransfer', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'addAdmin', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'cancelTransfer', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'completeService', values: [BigNumberish, string]): string;
 encodeFunctionData(functionFragment: 'getCurrentOwner', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'getLastRepairTimestamp', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getManufacturer', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'getNextPassportId', values?: undefined): string;
 encodeFunctionData(functionFragment: 'getPendingTransfer', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getProduct', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getProductStatus', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'getRepairCount', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getServiceCenter', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'hasPendingTransfer', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'initiateTransfer', values: [BigNumberish, AddressLike]): string;
 encodeFunctionData(functionFragment: 'isAdmin', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'isApprovedManufacturer', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'isApprovedServiceCenter', values: [AddressLike]): string;
+encodeFunctionData(functionFragment: 'isUnderService', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'isWarrantyActive', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'passportExists', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'registerManufacturer', values: [AddressLike, string]): string;
@@ -65,28 +70,34 @@ encodeFunctionData(functionFragment: 'registerProduct', values: [AddressLike, st
 encodeFunctionData(functionFragment: 'registerServiceCenter', values: [AddressLike, string]): string;
 encodeFunctionData(functionFragment: 'revokeManufacturer', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'revokeServiceCenter', values: [AddressLike]): string;
+encodeFunctionData(functionFragment: 'startService', values: [BigNumberish]): string;
 
     decodeFunctionResult(functionFragment: 'MAX_BRAND_LENGTH', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'MAX_CATEGORY_LENGTH', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'MAX_MODEL_NUMBER_LENGTH', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'MAX_NAME_LENGTH', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'MAX_PRODUCT_NAME_LENGTH', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'MAX_REPAIR_DESCRIPTION_LENGTH', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'MAX_SERIAL_NUMBER_LENGTH', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'acceptTransfer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'addAdmin', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'cancelTransfer', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'completeService', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getCurrentOwner', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'getLastRepairTimestamp', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getManufacturer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getNextPassportId', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getPendingTransfer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getProduct', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getProductStatus', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'getRepairCount', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getServiceCenter', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'hasPendingTransfer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'initiateTransfer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'isAdmin', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'isApprovedManufacturer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'isApprovedServiceCenter', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'isUnderService', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'isWarrantyActive', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'passportExists', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'registerManufacturer', data: BytesLike): Result;
@@ -94,6 +105,7 @@ decodeFunctionResult(functionFragment: 'registerProduct', data: BytesLike): Resu
 decodeFunctionResult(functionFragment: 'registerServiceCenter', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'revokeManufacturer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'startService', data: BytesLike): Result;
   }
 
   
@@ -181,6 +193,18 @@ decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): 
 
   
 
+    export namespace RepairAddedEvent {
+      export type InputTuple = [passportId: BigNumberish, serviceCenter: AddressLike, description: string, repairNumber: BigNumberish, timestamp: BigNumberish];
+      export type OutputTuple = [passportId: bigint, serviceCenter: string, description: string, repairNumber: bigint, timestamp: bigint];
+      export interface OutputObject {passportId: bigint, serviceCenter: string, description: string, repairNumber: bigint, timestamp: bigint };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
     export namespace ServiceCenterRegisteredEvent {
       export type InputTuple = [serviceCenter: AddressLike, name: string, timestamp: BigNumberish];
       export type OutputTuple = [serviceCenter: string, name: string, timestamp: bigint];
@@ -197,6 +221,30 @@ decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): 
       export type InputTuple = [serviceCenter: AddressLike, timestamp: BigNumberish];
       export type OutputTuple = [serviceCenter: string, timestamp: bigint];
       export interface OutputObject {serviceCenter: string, timestamp: bigint };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace ServiceCompletedEvent {
+      export type InputTuple = [passportId: BigNumberish, serviceCenter: AddressLike, timestamp: BigNumberish];
+      export type OutputTuple = [passportId: bigint, serviceCenter: string, timestamp: bigint];
+      export interface OutputObject {passportId: bigint, serviceCenter: string, timestamp: bigint };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace ServiceStartedEvent {
+      export type InputTuple = [passportId: BigNumberish, serviceCenter: AddressLike, timestamp: BigNumberish];
+      export type OutputTuple = [passportId: bigint, serviceCenter: string, timestamp: bigint];
+      export interface OutputObject {passportId: bigint, serviceCenter: string, timestamp: bigint };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -279,6 +327,14 @@ decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): 
     
 
     
+    MAX_REPAIR_DESCRIPTION_LENGTH: TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >
+    
+
+    
     MAX_SERIAL_NUMBER_LENGTH: TypedContractMethod<
       [],
       [bigint],
@@ -311,9 +367,25 @@ decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): 
     
 
     
+    completeService: TypedContractMethod<
+      [passportId: BigNumberish, description: string, ],
+      [void],
+      'nonpayable'
+    >
+    
+
+    
     getCurrentOwner: TypedContractMethod<
       [passportId: BigNumberish, ],
       [string],
+      'view'
+    >
+    
+
+    
+    getLastRepairTimestamp: TypedContractMethod<
+      [passportId: BigNumberish, ],
+      [bigint],
       'view'
     >
     
@@ -352,6 +424,14 @@ decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): 
 
     
     getProductStatus: TypedContractMethod<
+      [passportId: BigNumberish, ],
+      [bigint],
+      'view'
+    >
+    
+
+    
+    getRepairCount: TypedContractMethod<
       [passportId: BigNumberish, ],
       [bigint],
       'view'
@@ -401,6 +481,14 @@ decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): 
     
     isApprovedServiceCenter: TypedContractMethod<
       [account: AddressLike, ],
+      [boolean],
+      'view'
+    >
+    
+
+    
+    isUnderService: TypedContractMethod<
+      [passportId: BigNumberish, ],
       [boolean],
       'view'
     >
@@ -462,6 +550,14 @@ decodeFunctionResult(functionFragment: 'revokeServiceCenter', data: BytesLike): 
     >
     
 
+    
+    startService: TypedContractMethod<
+      [passportId: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >
+    
+
 
     getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
@@ -490,6 +586,11 @@ getFunction(nameOrSignature: 'MAX_PRODUCT_NAME_LENGTH'): TypedContractMethod<
       [bigint],
       'view'
     >;
+getFunction(nameOrSignature: 'MAX_REPAIR_DESCRIPTION_LENGTH'): TypedContractMethod<
+      [],
+      [bigint],
+      'view'
+    >;
 getFunction(nameOrSignature: 'MAX_SERIAL_NUMBER_LENGTH'): TypedContractMethod<
       [],
       [bigint],
@@ -510,9 +611,19 @@ getFunction(nameOrSignature: 'cancelTransfer'): TypedContractMethod<
       [void],
       'nonpayable'
     >;
+getFunction(nameOrSignature: 'completeService'): TypedContractMethod<
+      [passportId: BigNumberish, description: string, ],
+      [void],
+      'nonpayable'
+    >;
 getFunction(nameOrSignature: 'getCurrentOwner'): TypedContractMethod<
       [passportId: BigNumberish, ],
       [string],
+      'view'
+    >;
+getFunction(nameOrSignature: 'getLastRepairTimestamp'): TypedContractMethod<
+      [passportId: BigNumberish, ],
+      [bigint],
       'view'
     >;
 getFunction(nameOrSignature: 'getManufacturer'): TypedContractMethod<
@@ -536,6 +647,11 @@ getFunction(nameOrSignature: 'getProduct'): TypedContractMethod<
       'view'
     >;
 getFunction(nameOrSignature: 'getProductStatus'): TypedContractMethod<
+      [passportId: BigNumberish, ],
+      [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'getRepairCount'): TypedContractMethod<
       [passportId: BigNumberish, ],
       [bigint],
       'view'
@@ -567,6 +683,11 @@ getFunction(nameOrSignature: 'isApprovedManufacturer'): TypedContractMethod<
     >;
 getFunction(nameOrSignature: 'isApprovedServiceCenter'): TypedContractMethod<
       [account: AddressLike, ],
+      [boolean],
+      'view'
+    >;
+getFunction(nameOrSignature: 'isUnderService'): TypedContractMethod<
+      [passportId: BigNumberish, ],
       [boolean],
       'view'
     >;
@@ -605,6 +726,11 @@ getFunction(nameOrSignature: 'revokeServiceCenter'): TypedContractMethod<
       [void],
       'nonpayable'
     >;
+getFunction(nameOrSignature: 'startService'): TypedContractMethod<
+      [passportId: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >;
 
     getEvent(key: 'AdminAdded'): TypedContractEvent<AdminAddedEvent.InputTuple, AdminAddedEvent.OutputTuple, AdminAddedEvent.OutputObject>;
 getEvent(key: 'ManufacturerRegistered'): TypedContractEvent<ManufacturerRegisteredEvent.InputTuple, ManufacturerRegisteredEvent.OutputTuple, ManufacturerRegisteredEvent.OutputObject>;
@@ -613,8 +739,11 @@ getEvent(key: 'OwnershipTransferAccepted'): TypedContractEvent<OwnershipTransfer
 getEvent(key: 'OwnershipTransferCancelled'): TypedContractEvent<OwnershipTransferCancelledEvent.InputTuple, OwnershipTransferCancelledEvent.OutputTuple, OwnershipTransferCancelledEvent.OutputObject>;
 getEvent(key: 'OwnershipTransferRequested'): TypedContractEvent<OwnershipTransferRequestedEvent.InputTuple, OwnershipTransferRequestedEvent.OutputTuple, OwnershipTransferRequestedEvent.OutputObject>;
 getEvent(key: 'ProductRegistered'): TypedContractEvent<ProductRegisteredEvent.InputTuple, ProductRegisteredEvent.OutputTuple, ProductRegisteredEvent.OutputObject>;
+getEvent(key: 'RepairAdded'): TypedContractEvent<RepairAddedEvent.InputTuple, RepairAddedEvent.OutputTuple, RepairAddedEvent.OutputObject>;
 getEvent(key: 'ServiceCenterRegistered'): TypedContractEvent<ServiceCenterRegisteredEvent.InputTuple, ServiceCenterRegisteredEvent.OutputTuple, ServiceCenterRegisteredEvent.OutputObject>;
 getEvent(key: 'ServiceCenterRevoked'): TypedContractEvent<ServiceCenterRevokedEvent.InputTuple, ServiceCenterRevokedEvent.OutputTuple, ServiceCenterRevokedEvent.OutputObject>;
+getEvent(key: 'ServiceCompleted'): TypedContractEvent<ServiceCompletedEvent.InputTuple, ServiceCompletedEvent.OutputTuple, ServiceCompletedEvent.OutputObject>;
+getEvent(key: 'ServiceStarted'): TypedContractEvent<ServiceStartedEvent.InputTuple, ServiceStartedEvent.OutputTuple, ServiceStartedEvent.OutputObject>;
 
     filters: {
       
@@ -646,12 +775,24 @@ getEvent(key: 'ServiceCenterRevoked'): TypedContractEvent<ServiceCenterRevokedEv
       ProductRegistered: TypedContractEvent<ProductRegisteredEvent.InputTuple, ProductRegisteredEvent.OutputTuple, ProductRegisteredEvent.OutputObject>;
     
 
+      'RepairAdded(uint256,address,string,uint256,uint256)': TypedContractEvent<RepairAddedEvent.InputTuple, RepairAddedEvent.OutputTuple, RepairAddedEvent.OutputObject>;
+      RepairAdded: TypedContractEvent<RepairAddedEvent.InputTuple, RepairAddedEvent.OutputTuple, RepairAddedEvent.OutputObject>;
+    
+
       'ServiceCenterRegistered(address,string,uint256)': TypedContractEvent<ServiceCenterRegisteredEvent.InputTuple, ServiceCenterRegisteredEvent.OutputTuple, ServiceCenterRegisteredEvent.OutputObject>;
       ServiceCenterRegistered: TypedContractEvent<ServiceCenterRegisteredEvent.InputTuple, ServiceCenterRegisteredEvent.OutputTuple, ServiceCenterRegisteredEvent.OutputObject>;
     
 
       'ServiceCenterRevoked(address,uint256)': TypedContractEvent<ServiceCenterRevokedEvent.InputTuple, ServiceCenterRevokedEvent.OutputTuple, ServiceCenterRevokedEvent.OutputObject>;
       ServiceCenterRevoked: TypedContractEvent<ServiceCenterRevokedEvent.InputTuple, ServiceCenterRevokedEvent.OutputTuple, ServiceCenterRevokedEvent.OutputObject>;
+    
+
+      'ServiceCompleted(uint256,address,uint256)': TypedContractEvent<ServiceCompletedEvent.InputTuple, ServiceCompletedEvent.OutputTuple, ServiceCompletedEvent.OutputObject>;
+      ServiceCompleted: TypedContractEvent<ServiceCompletedEvent.InputTuple, ServiceCompletedEvent.OutputTuple, ServiceCompletedEvent.OutputObject>;
+    
+
+      'ServiceStarted(uint256,address,uint256)': TypedContractEvent<ServiceStartedEvent.InputTuple, ServiceStartedEvent.OutputTuple, ServiceStartedEvent.OutputObject>;
+      ServiceStarted: TypedContractEvent<ServiceStartedEvent.InputTuple, ServiceStartedEvent.OutputTuple, ServiceStartedEvent.OutputObject>;
     
     };
   }

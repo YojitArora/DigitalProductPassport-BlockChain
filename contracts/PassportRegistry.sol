@@ -5,8 +5,9 @@ pragma solidity ^0.8.20;
  * @title PassportRegistry
  * @author Digital Product Passport Team
  * @notice Canonical registry smart contract for the Blockchain-Based Digital Product Passport System.
- * @dev Sprint 1, 2 & 3: Authorization, Role Management, Product Registration & Two-Step Ownership Transfer Layer.
- *      Follows PROJECT_SPEC_v2.md specifications, pull-payment / commit-reveal patterns, and EVM storage optimization.
+ * @dev Sprint 1, 2, 3 & 4: Authorization, Role Management, Product Registration, Two-Step Ownership Transfer,
+ *      and Service / Maintenance Lifecycle Layer.
+ *      Follows PROJECT_SPEC_v2.md specifications, pull-payment / commit-reveal patterns, and event-driven architecture.
  */
 contract PassportRegistry {
     /* ================================================================ */
@@ -30,6 +31,9 @@ contract PassportRegistry {
 
     /// @notice Maximum allowed byte length for manufacturer serial number
     uint256 public constant MAX_SERIAL_NUMBER_LENGTH = 64;
+
+    /// @notice Maximum allowed byte length for service / repair record description
+    uint256 public constant MAX_REPAIR_DESCRIPTION_LENGTH = 256;
 
     /**
      * @notice Representation of an authorized product manufacturer entity.
@@ -90,26 +94,46 @@ contract PassportRegistry {
     }
 
     /**
+     * @notice Ephemeral representation of an authenticated repair/maintenance log entry.
+     * @dev History of repairs is intentionally event-driven via `RepairAdded` events; no arrays stored on-chain.
+     * @param serviceCenter Ethereum wallet address of the authorized service center that logged the repair
+     * @param description Detailed log description of the service/repair performed (max 256 bytes)
+     * @param timestamp Unix block timestamp when the repair was recorded
+     */
+    struct RepairRecord {
+        address serviceCenter;
+        string description;
+        uint256 timestamp;
+    }
+
+    /**
      * @notice Comprehensive on-chain Digital Product Passport entity.
      * @dev Stores current state only; history and audit trails are reconstructed from blockchain events.
      *      Storage Slot Layout Analysis:
      *      - Slot 0: `passportId` (32 bytes / uint256)
-     *      - Slot 1: `manufacturer` (20 bytes) + `status` (1 byte enum) = 21 bytes (packed together)
-     *      - Slot 2: `currentOwner` (20 bytes)
-     *      - Slot 3: `manufactureDate` (32 bytes / uint256 timestamp)
-     *      - Slot 4: `createdAt` (32 bytes / uint256 timestamp)
-     *      - Slot 5: `warranty.startTimestamp` (32 bytes / uint256)
-     *      - Slot 6: `warranty.endTimestamp` (32 bytes / uint256)
-     *      - Slot 7: `pendingTransfer.to` (20 bytes) + `pendingTransfer.exists` (1 byte) = 21 bytes (packed)
-     *      - Slot 8: `pendingTransfer.requestedAt` (32 bytes / uint256)
-     *      - Slots 9-13: Dynamic strings (`productName`, `brand`, `category`, `modelNumber`, `serialNumber`),
+     *      - Slot 1: `manufacturer` (20 bytes)
+     *      - Slot 2: `currentOwner` (20 bytes) + `status` (1 byte enum) + `previousOperationalStatus` (1 byte enum) = 22 bytes (packed together)
+     *      - Slot 3: `currentServiceCenter` (20 bytes)
+     *      - Slot 4: `manufactureDate` (32 bytes / uint256 timestamp)
+     *      - Slot 5: `createdAt` (32 bytes / uint256 timestamp)
+     *      - Slot 6: `repairCount` (32 bytes / uint256)
+     *      - Slot 7: `lastRepairTimestamp` (32 bytes / uint256)
+     *      - Slot 8: `warranty.startTimestamp` (32 bytes / uint256)
+     *      - Slot 9: `warranty.endTimestamp` (32 bytes / uint256)
+     *      - Slot 10: `pendingTransfer.to` (20 bytes) + `pendingTransfer.exists` (1 byte) = 21 bytes (packed)
+     *      - Slot 11: `pendingTransfer.requestedAt` (32 bytes / uint256)
+     *      - Slots 12-16: Dynamic strings (`productName`, `brand`, `category`, `modelNumber`, `serialNumber`),
      *        each reserving a full 32-byte slot for string length/pointer.
      * @param passportId Unique auto-incrementing platform identifier (starts at 1)
      * @param manufacturer Address of the authorized manufacturer who minted the passport
      * @param currentOwner Address of the current product owner
      * @param status Current lifecycle status of the physical product
+     * @param previousOperationalStatus Previous operational status stored when transitioning to UnderService
+     * @param currentServiceCenter Address of the authorized service center currently servicing the product (0x0 when not in service)
      * @param manufactureDate Unix timestamp of product manufacture
      * @param createdAt Unix timestamp when the passport was registered on-chain
+     * @param repairCount Total count of completed authenticated service/repair sessions
+     * @param lastRepairTimestamp Unix timestamp of the most recent completed repair session (0 if none)
      * @param warranty Warranty time window struct
      * @param pendingTransfer Current pending two-step ownership transfer struct
      * @param productName Full commercial product name
@@ -123,8 +147,12 @@ contract PassportRegistry {
         address manufacturer;
         address currentOwner;
         ProductStatus status;
+        ProductStatus previousOperationalStatus;
+        address currentServiceCenter;
         uint256 manufactureDate;
         uint256 createdAt;
+        uint256 repairCount;
+        uint256 lastRepairTimestamp;
         Warranty warranty;
         PendingTransfer pendingTransfer;
         string productName;
@@ -278,6 +306,50 @@ contract PassportRegistry {
         uint256 timestamp
     );
 
+    /**
+     * @notice Emitted when an authorized service center begins a maintenance/repair session.
+     * @param passportId The unique platform ID of the product (indexed)
+     * @param serviceCenter The wallet address of the authorized service center (indexed)
+     * @param timestamp The block timestamp when service started
+     */
+    event ServiceStarted(
+        uint256 indexed passportId,
+        address indexed serviceCenter,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Emitted when a verified maintenance or repair record is added to a product passport.
+     * @dev Primary event used to reconstruct full product repair history and provenance off-chain.
+     *      `repairNumber` is a monotonically increasing repair sequence generated from `repairCount`.
+     *      Historical repair order, full timelines, and descriptions are intentionally event-driven
+     *      and reconstructed from `RepairAdded` events rather than contract storage arrays.
+     * @param passportId The unique platform ID of the product (indexed)
+     * @param serviceCenter The wallet address of the service center that logged the repair (indexed)
+     * @param description Detailed log description of the service performed
+     * @param repairNumber Monotonically increasing sequential repair sequence index for this product passport
+     * @param timestamp The block timestamp when the repair was recorded
+     */
+    event RepairAdded(
+        uint256 indexed passportId,
+        address indexed serviceCenter,
+        string description,
+        uint256 repairNumber,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Emitted when a maintenance/repair session is successfully completed.
+     * @param passportId The unique platform ID of the product (indexed)
+     * @param serviceCenter The wallet address of the authorized service center (indexed)
+     * @param timestamp The block timestamp when service was completed
+     */
+    event ServiceCompleted(
+        uint256 indexed passportId,
+        address indexed serviceCenter,
+        uint256 timestamp
+    );
+
     /* ================================================================ */
     /* 4. CUSTOM ERRORS                                                 */
     /* ================================================================ */
@@ -357,6 +429,18 @@ contract PassportRegistry {
     /// @notice Reverted when an operation is blocked because the product is reported stolen.
     /// @param passportId The numeric Passport ID
     error ProductReportedStolen(uint256 passportId);
+
+    /// @notice Reverted when attempting to start service on a product that is already in UnderService status.
+    /// @param passportId The numeric Passport ID
+    error AlreadyUnderService(uint256 passportId);
+
+    /// @notice Reverted when attempting to complete service on a product that is not currently in UnderService status.
+    /// @param passportId The numeric Passport ID
+    error NotUnderService(uint256 passportId);
+
+    /// @notice Reverted when an approved service center attempts to complete service started by a different service center.
+    /// @param passportId The numeric Passport ID
+    error NotCurrentServiceCenter(uint256 passportId);
 
     /* ================================================================ */
     /* 5. MODIFIERS (ACCESS CONTROL)                                    */
@@ -634,6 +718,7 @@ contract PassportRegistry {
         p.manufacturer = msg.sender;
         p.currentOwner = initialOwner;
         p.status = ProductStatus.Active;
+        p.previousOperationalStatus = ProductStatus.Active;
         p.manufactureDate = manufactureDate;
         p.createdAt = block.timestamp;
         p.productName = productName;
@@ -653,8 +738,62 @@ contract PassportRegistry {
     }
 
     /* ================================================================ */
-    /* 8. SERVICE CENTER FUNCTIONS (Reserved for future sprints)        */
+    /* 8. SERVICE CENTER FUNCTIONS                                      */
     /* ================================================================ */
+
+    /**
+     * @notice Initiates a maintenance or repair service lifecycle for a physical product passport.
+     * @dev Restricts execution to approved service centers. Saves previous operational status, tracks current service center, and sets status to UnderService.
+     * @param passportId The unique platform ID of the product passport.
+     */
+    function startService(uint256 passportId)
+        external
+        onlyApprovedServiceCenter
+        notReportedStolen(passportId)
+    {
+        Product storage product = _getValidatedProduct(passportId);
+
+        if (product.status == ProductStatus.UnderService) {
+            revert AlreadyUnderService(passportId);
+        }
+
+        product.previousOperationalStatus = product.status;
+        product.status = ProductStatus.UnderService;
+        product.currentServiceCenter = msg.sender;
+
+        emit ServiceStarted(passportId, msg.sender, block.timestamp);
+    }
+
+    /**
+     * @notice Completes an active service session, logs repair event metadata, and restores operational status.
+     * @dev Restricts execution to the specific approved service center that started the active service session. Increments repair count and records timestamp.
+     * @param passportId The unique platform ID of the product passport.
+     * @param description Detailed log description of the service/repair performed (1 to 256 bytes).
+     */
+    function completeService(uint256 passportId, string calldata description)
+        external
+        onlyApprovedServiceCenter
+    {
+        Product storage product = _getValidatedProduct(passportId);
+        _validateActiveServiceCenter(product, passportId);
+
+        _validateStringField(description, "description", MAX_REPAIR_DESCRIPTION_LENGTH);
+
+        product.status = product.previousOperationalStatus;
+        product.currentServiceCenter = address(0);
+        product.repairCount++;
+        product.lastRepairTimestamp = block.timestamp;
+
+        emit RepairAdded(
+            passportId,
+            msg.sender,
+            description,
+            product.repairCount,
+            block.timestamp
+        );
+
+        emit ServiceCompleted(passportId, msg.sender, block.timestamp);
+    }
 
     /* ================================================================ */
     /* 9. OWNER FUNCTIONS                                               */
@@ -859,6 +998,36 @@ contract PassportRegistry {
     }
 
     /**
+     * @notice Queries the total number of authenticated repairs logged for a product passport.
+     * @dev Gas-free view call. Reverts with `PassportNotFound` if passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return The total count of completed repairs.
+     */
+    function getRepairCount(uint256 passportId) external view returns (uint256) {
+        return _getValidatedProduct(passportId).repairCount;
+    }
+
+    /**
+     * @notice Queries the block timestamp of the most recent completed repair on a product passport.
+     * @dev Gas-free view call. Reverts with `PassportNotFound` if passport does not exist. Returns 0 if no repairs logged.
+     * @param passportId The numeric Passport ID.
+     * @return Unix timestamp of the last completed repair.
+     */
+    function getLastRepairTimestamp(uint256 passportId) external view returns (uint256) {
+        return _getValidatedProduct(passportId).lastRepairTimestamp;
+    }
+
+    /**
+     * @notice Queries whether a product passport is currently under active maintenance/service.
+     * @dev Gas-free view call. Reverts with `PassportNotFound` if passport does not exist.
+     * @param passportId The numeric Passport ID.
+     * @return True if product status is UnderService, false otherwise.
+     */
+    function isUnderService(uint256 passportId) external view returns (bool) {
+        return _getValidatedProduct(passportId).status == ProductStatus.UnderService;
+    }
+
+    /**
      * @notice Returns the next Passport ID that will be assigned to a new product.
      * @dev Gas-free view call.
      * @return The next auto-incrementing Passport ID.
@@ -909,6 +1078,23 @@ contract PassportRegistry {
             revert NoPendingTransfer(passportId);
         }
         return product.pendingTransfer;
+    }
+
+    /**
+     * @dev Internal helper to validate that a product is currently under service and that the caller
+     *      is the authorized service center that initiated the active service session.
+     *      Reverts with `NotUnderService(passportId)` if the product is not UnderService.
+     *      Reverts with `NotCurrentServiceCenter(passportId)` if `msg.sender` does not match `currentServiceCenter`.
+     * @param product The storage reference to the Product entity being inspected.
+     * @param passportId The numeric Passport ID for error reporting.
+     */
+    function _validateActiveServiceCenter(Product storage product, uint256 passportId) internal view {
+        if (product.status != ProductStatus.UnderService) {
+            revert NotUnderService(passportId);
+        }
+        if (product.currentServiceCenter != msg.sender) {
+            revert NotCurrentServiceCenter(passportId);
+        }
     }
 
     /**
