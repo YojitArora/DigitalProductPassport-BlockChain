@@ -1,9 +1,10 @@
 import React from "react";
 import { ProductStatus, PRODUCT_STATUS_META } from "../types";
-import { LuCheck, LuWrench, LuShieldAlert, LuRotateCcw } from "react-icons/lu";
+import { LuCheck, LuWrench, LuShieldAlert, LuRotateCcw, LuWarehouse } from "react-icons/lu";
 
 interface StatusBadgeProps {
   status: ProductStatus;
+  isInventory?: boolean;
   size?: "sm" | "md" | "lg";
 }
 
@@ -14,12 +15,28 @@ const STATUS_ICONS: Record<ProductStatus, React.ReactNode> = {
   [ProductStatus.Recovered]: <LuRotateCcw />,
 };
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = "md" }) => {
-  const meta = PRODUCT_STATUS_META[status] || {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({
+  status,
+  isInventory = false,
+  size = "md",
+}) => {
+  let meta = PRODUCT_STATUS_META[status] || {
     label: "Unknown",
     color: "#6b7280",
     bg: "rgba(107, 114, 128, 0.12)",
   };
+
+  let icon = STATUS_ICONS[status];
+
+  // If in inventory and in normal active state, display as Manufacturer Inventory
+  if (isInventory && status === ProductStatus.Active) {
+    meta = {
+      label: "Manufacturer Inventory",
+      color: "var(--accent-primary, #6366f1)",
+      bg: "rgba(99, 102, 241, 0.12)",
+    };
+    icon = <LuWarehouse />;
+  }
 
   const fontSizes = {
     sm: "0.75rem",
@@ -50,7 +67,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = "md" })
         letterSpacing: "0.01em",
       }}
     >
-      {STATUS_ICONS[status]}
+      {icon}
       <span>{meta.label}</span>
     </span>
   );

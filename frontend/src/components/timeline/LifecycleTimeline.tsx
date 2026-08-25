@@ -1,6 +1,7 @@
 import React from "react";
 import { Product, ProductStatus } from "../../types";
 import { formatDate } from "../../utils/dateUtils";
+import { isProductInInventory } from "../../utils/productUtils";
 import {
   LuFactory,
   LuShieldCheck,
@@ -8,6 +9,7 @@ import {
   LuWrench,
   LuShieldAlert,
   LuClock,
+  LuWarehouse,
 } from "react-icons/lu";
 
 interface LifecycleTimelineProps {
@@ -15,7 +17,7 @@ interface LifecycleTimelineProps {
 }
 
 export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product }) => {
-
+  const isInventory = isProductInInventory(product);
   const isWarrantyActivated = product.warranty.startTimestamp > 0n;
   const now = BigInt(Math.floor(Date.now() / 1000));
   const isWarrantyActive =
@@ -66,18 +68,51 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product })
     },
     {
       id: "custody",
-      title: "3. Ownership & Provenance",
-      subtitle: `Current Custody: ${truncate(product.currentOwner)}`,
-      icon: <LuUser />,
-      color: "var(--status-info, #3b82f6)",
-      bgColor: "rgba(59, 130, 246, 0.12)",
-      statusBadge: product.pendingTransfer.exists ? "Transfer Pending" : "Secured Custody",
-      badgeColor: product.pendingTransfer.exists ? "var(--status-warning)" : "var(--status-info)",
-      badgeBg: product.pendingTransfer.exists ? "rgba(245, 158, 11, 0.12)" : "rgba(59, 130, 246, 0.12)",
-      details: [
-        { label: "Current Owner", value: truncate(product.currentOwner) },
-        { label: "Pending Transfer", value: product.pendingTransfer.exists ? `To ${truncate(product.pendingTransfer.to)}` : "None" },
-      ],
+      title: isInventory ? "3. Inventory & First Ownership" : "3. Ownership & Provenance",
+      subtitle: isInventory
+        ? product.pendingTransfer.exists
+          ? `First ownership transfer in progress to ${truncate(product.pendingTransfer.to)}`
+          : "Held in factory inventory · Awaiting first customer sale"
+        : `Current Custody: ${truncate(product.currentOwner)}`,
+      icon: isInventory ? <LuWarehouse /> : <LuUser />,
+      color: isInventory ? "var(--accent-primary, #6366f1)" : "var(--status-info, #3b82f6)",
+      bgColor: isInventory ? "rgba(99, 102, 241, 0.12)" : "rgba(59, 130, 246, 0.12)",
+      statusBadge: isInventory
+        ? product.pendingTransfer.exists
+          ? "First Sale Pending"
+          : "Manufacturer Inventory"
+        : product.pendingTransfer.exists
+        ? "Transfer Pending"
+        : "Customer Custody",
+      badgeColor: product.pendingTransfer.exists
+        ? "var(--status-warning)"
+        : isInventory
+        ? "var(--accent-primary)"
+        : "var(--status-info)",
+      badgeBg: product.pendingTransfer.exists
+        ? "rgba(245, 158, 11, 0.12)"
+        : isInventory
+        ? "rgba(99, 102, 241, 0.12)"
+        : "rgba(59, 130, 246, 0.12)",
+      details: isInventory
+        ? [
+            { label: "Current Custody", value: "Manufacturer Inventory" },
+            {
+              label: "First Sale Transfer",
+              value: product.pendingTransfer.exists
+                ? `Pending To ${truncate(product.pendingTransfer.to)}`
+                : "Awaiting First Customer",
+            },
+          ]
+        : [
+            { label: "Current Owner", value: truncate(product.currentOwner) },
+            {
+              label: "Pending Transfer",
+              value: product.pendingTransfer.exists
+                ? `To ${truncate(product.pendingTransfer.to)}`
+                : "None",
+            },
+          ],
     },
     {
       id: "service",

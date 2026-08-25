@@ -388,12 +388,16 @@ export class PassportService {
   }
 
   /**
-   * Checks whether a wallet currently holds on-chain ownership of at least one product.
+   * Checks whether a wallet currently holds on-chain customer ownership of at least one product.
+   * Unsold factory inventory is managed in the Manufacturer Portal and excluded from customer ownership.
    */
   static async hasOwnedProducts(account: string): Promise<boolean> {
     if (!account) return false;
     const owned = await this.getProductsByOwner(account);
-    return owned.length > 0;
+    const customerOwned = owned.filter(
+      (p) => p.manufacturer.toLowerCase() !== account.toLowerCase()
+    );
+    return customerOwned.length > 0;
   }
 
   /* ================================================================ */

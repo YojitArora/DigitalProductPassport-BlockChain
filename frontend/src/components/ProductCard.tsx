@@ -6,6 +6,7 @@ import RepairSummary from "./RepairSummary";
 import TransferStatus from "./TransferStatus";
 import QRCodeModal from "./QRCodeModal";
 import { formatDate } from "../utils/dateUtils";
+import { isProductInInventory } from "../utils/productUtils";
 import {
   LuQrCode,
   LuExternalLink,
@@ -14,6 +15,7 @@ import {
   LuCalendar,
   LuTag,
   LuLayers,
+  LuWarehouse,
 } from "react-icons/lu";
 import { Link } from "react-router-dom";
 
@@ -30,6 +32,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [copiedOwner, setCopiedOwner] = useState<boolean>(false);
   const [copiedMfg, setCopiedMfg] = useState<boolean>(false);
 
+  const isInventory = isProductInInventory(product);
   const passportIdStr = product.passportId.toString();
   const manufactureDate = formatDate(product.manufactureDate);
   const createdDate = formatDate(product.createdAt);
@@ -83,40 +86,45 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               >
                 #{passportIdStr}
               </span>
-              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                {product.brand}
-              </span>
+              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                <StatusBadge status={product.status} isInventory={isInventory} />
+                <WarrantyBadge warranty={product.warranty} />
+              </div>
             </div>
 
-            <h3
+            <h2
               style={{
-                fontSize: "1.35rem",
+                fontSize: "1.5rem",
                 fontWeight: 700,
                 color: "var(--text-primary, #f9fafb)",
-                letterSpacing: "-0.01em",
+                marginBottom: "0.25rem",
               }}
             >
               {product.productName}
-            </h3>
-          </div>
+            </h2>
 
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <StatusBadge status={product.status} />
-            <WarrantyBadge warranty={product.warranty} />
+            <div
+              style={{
+                color: "var(--text-secondary, #9ca3af)",
+                fontSize: "0.9rem",
+              }}
+            >
+              {product.brand}
+            </div>
           </div>
         </div>
 
-        {/* Product Spec Grid */}
+        {/* Specifications Grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-            gap: "0.75rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "1rem",
             padding: "1rem",
             background: "var(--bg-card, #1f2937)",
             borderRadius: "var(--radius-md, 10px)",
-            border: "1px solid var(--border-subtle)",
-            fontSize: "0.825rem",
+            border: "1px solid var(--border-subtle, rgba(255,255,255,0.08))",
+            fontSize: "0.875rem",
           }}
         >
           <div>
@@ -192,27 +200,47 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <span style={{ color: "var(--text-secondary)" }}>Current Owner:</span>
-              <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 500 }}>
-                {truncate(product.currentOwner)}
-              </span>
-              <button
-                onClick={handleCopyOwner}
-                title="Copy Owner Address"
-                style={{
-                  color: copiedOwner ? "var(--status-success)" : "var(--text-muted)",
-                  fontSize: "0.9rem",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {copiedOwner ? <LuCheck /> : <LuCopy />}
-              </button>
-            </div>
+            {isInventory ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Current Custody:</span>
+                <span
+                  style={{
+                    color: "var(--accent-primary)",
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    background: "rgba(99, 102, 241, 0.12)",
+                    padding: "0.15rem 0.5rem",
+                    borderRadius: "var(--radius-sm)",
+                  }}
+                >
+                  <LuWarehouse /> Manufacturer Inventory (Unsold)
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Current Owner:</span>
+                <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 500 }}>
+                  {truncate(product.currentOwner)}
+                </span>
+                <button
+                  onClick={handleCopyOwner}
+                  title="Copy Owner Address"
+                  style={{
+                    color: copiedOwner ? "var(--status-success)" : "var(--text-muted)",
+                    fontSize: "0.9rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {copiedOwner ? <LuCheck /> : <LuCopy />}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

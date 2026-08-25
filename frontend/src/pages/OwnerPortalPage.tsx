@@ -46,7 +46,11 @@ export const OwnerPortalPage: React.FC = () => {
     setLoadingOwned(true);
     try {
       const list = await PassportService.getProductsByOwner(account);
-      setOwnedProducts(list);
+      // Unsold inventory is managed in the Manufacturer Portal and excluded from customer Owner Portal
+      const customerOwned = list.filter(
+        (p) => p.manufacturer.toLowerCase() !== account.toLowerCase()
+      );
+      setOwnedProducts(customerOwned);
       refreshRoles();
     } catch (err) {
       console.warn("Failed to fetch owned products:", err);

@@ -7,6 +7,7 @@ import { Product } from "../types";
 import TransactionModal from "../components/TransactionModal";
 import StatusBadge from "../components/StatusBadge";
 import WarrantyBadge from "../components/WarrantyBadge";
+import { isProductInInventory } from "../utils/productUtils";
 import {
   LuFactory,
   LuArrowLeft,
@@ -16,6 +17,11 @@ import {
   LuExternalLink,
   LuRefreshCw,
   LuLoader,
+  LuWarehouse,
+  LuArrowRightLeft,
+  LuX,
+  LuBoxes,
+  LuShoppingBag,
 } from "react-icons/lu";
 
 export const ManufacturerPortalPage: React.FC = () => {
@@ -26,6 +32,11 @@ export const ManufacturerPortalPage: React.FC = () => {
   // Registered Products State
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<"all" | "inventory" | "sold">("all");
+
+  // Transfer Modal State for Inventory Items
+  const [transferModalProduct, setTransferModalProduct] = useState<Product | null>(null);
+  const [transferRecipient, setTransferRecipient] = useState<string>("");
 
   // Manufacturer Mint Form
   const [mintForm, setMintForm] = useState({
@@ -63,6 +74,17 @@ export const ManufacturerPortalPage: React.FC = () => {
 
   const truncate = (addr: string) =>
     addr ? `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}` : "None";
+
+  // Filtered product lists
+  const inventoryProducts = products.filter((p) => isProductInInventory(p));
+  const soldProducts = products.filter((p) => !isProductInInventory(p));
+
+  const displayedProducts =
+    activeTab === "inventory"
+      ? inventoryProducts
+      : activeTab === "sold"
+      ? soldProducts
+      : products;
 
   return (
     <div
@@ -114,7 +136,7 @@ export const ManufacturerPortalPage: React.FC = () => {
               Manufacturer Operations Portal
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-              Mint immutable Digital Product Passports, activate certified warranties, and track your registered product catalog.
+              Mint immutable Digital Product Passports, manage factory inventory, activate certified warranties, and initiate first-time customer sales.
             </p>
           </div>
         </div>
@@ -128,17 +150,20 @@ export const ManufacturerPortalPage: React.FC = () => {
             <LuPlus style={{ color: "var(--accent-primary)" }} /> Mint Product Passport
           </h3>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
-            Create an immutable Digital Product Passport on-chain for a newly manufactured product.
+            Create an immutable Digital Product Passport on-chain. Leave the Initial Owner empty to hold the product in <strong>Manufacturer Inventory</strong>.
           </p>
 
           <form
             onSubmit={(e) => {
               e.preventDefault();
               const mDate = Math.floor(new Date(mintForm.manufactureDate || Date.now()).getTime() / 1000);
+              // Default to manufacturer's wallet address if left blank for inventory
+              const targetInitialOwner = mintForm.initialOwner.trim() || account;
+
               tx.execute(async (cb) => {
                 const res = await PassportService.registerProduct(
                   {
-                    initialOwner: mintForm.initialOwner,
+                    initialOwner: targetInitialOwner,
                     productName: mintForm.productName,
                     brand: mintForm.brand,
                     category: mintForm.category,
@@ -148,20 +173,36 @@ export const ManufacturerPortalPage: React.FC = () => {
                   },
                   cb
                 );
+                // Reset form
+                setMintForm({
+                  initialOwner: "",
+                  productName: "",
+                  brand: "",
+                  category: "",
+                  modelNumber: "",
+                  serialNumber: "",
+                  manufactureDate: "",
+                });
                 fetchRegisteredProducts();
                 return res;
               });
             }}
             style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
           >
-            <input
-              type="text"
-              required
-              placeholder="Initial Owner Address (0x...)"
-              value={mintForm.initialOwner}
-              onChange={(e) => setMintForm({ ...mintForm, initialOwner: e.target.value })}
-              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-            />
+            <div>
+              <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "flex", justifyContent: "space-between" }}>
+                <span>Initial Owner (Optional):</span>
+                <span style={{ color: "var(--accent-primary)" }}>Leave empty for Inventory</span>
+              </label>
+              <input
+                type="text"
+                placeholder="0x... (Leave empty for Manufacturer Inventory)"
+                value={mintForm.initialOwner}
+                onChange={(e) => setMintForm({ ...mintForm, initialOwner: e.target.value })}
+                style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
+              />
+            </div>
+
             <input
               type="text"
               required
@@ -220,7 +261,7 @@ export const ManufacturerPortalPage: React.FC = () => {
             </div>
             <button
               type="submit"
-              style={{ padding: "0.75rem", background: "var(--accent-primary)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, marginTop: "0.5rem" }}
+              style={{ padding: "0.75rem", background: "var(--accent-primary)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, marginTop: "0.5rem", cursor: "pointer", border: "none" }}
             >
               Register & Mint Passport
             </button>
@@ -270,7 +311,7 @@ export const ManufacturerPortalPage: React.FC = () => {
             />
             <button
               type="submit"
-              style={{ padding: "0.75rem", background: "var(--status-success)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, marginTop: "0.5rem" }}
+              style={{ padding: "0.75rem", background: "var(--status-success)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, marginTop: "0.5rem", cursor: "pointer", border: "none" }}
             >
               Activate Warranty
             </button>
@@ -287,12 +328,70 @@ export const ManufacturerPortalPage: React.FC = () => {
           padding: "1.75rem",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "1rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <LuLayers style={{ color: "var(--accent-primary)", fontSize: "1.2rem" }} />
             <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              Products Registered By This Manufacturer ({products.length})
+              Registered Product Catalog ({products.length})
             </h3>
+          </div>
+
+          {/* Filter Tabs */}
+          <div style={{ display: "flex", gap: "0.4rem", background: "var(--bg-card)", padding: "0.25rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
+            <button
+              onClick={() => setActiveTab("all")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                padding: "0.35rem 0.75rem",
+                borderRadius: "var(--radius-sm)",
+                border: "none",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                background: activeTab === "all" ? "var(--accent-primary)" : "transparent",
+                color: activeTab === "all" ? "#ffffff" : "var(--text-secondary)",
+              }}
+            >
+              <LuBoxes /> All ({products.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("inventory")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                padding: "0.35rem 0.75rem",
+                borderRadius: "var(--radius-sm)",
+                border: "none",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                background: activeTab === "inventory" ? "var(--accent-primary)" : "transparent",
+                color: activeTab === "inventory" ? "#ffffff" : "var(--text-secondary)",
+              }}
+            >
+              <LuWarehouse /> Inventory ({inventoryProducts.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("sold")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                padding: "0.35rem 0.75rem",
+                borderRadius: "var(--radius-sm)",
+                border: "none",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                background: activeTab === "sold" ? "var(--accent-primary)" : "transparent",
+                color: activeTab === "sold" ? "#ffffff" : "var(--text-secondary)",
+              }}
+            >
+              <LuShoppingBag /> Sold ({soldProducts.length})
+            </button>
           </div>
 
           <button
@@ -311,7 +410,7 @@ export const ManufacturerPortalPage: React.FC = () => {
               cursor: "pointer",
             }}
           >
-            <LuRefreshCw className={loadingProducts ? "animate-spin" : ""} /> Refresh List
+            <LuRefreshCw className={loadingProducts ? "animate-spin" : ""} /> Refresh
           </button>
         </div>
 
@@ -320,9 +419,13 @@ export const ManufacturerPortalPage: React.FC = () => {
             <LuLoader style={{ animation: "spin 1.5s linear infinite", fontSize: "1.5rem", marginBottom: "0.5rem" }} />
             <div>Loading registered products from blockchain...</div>
           </div>
-        ) : products.length === 0 ? (
+        ) : displayedProducts.length === 0 ? (
           <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
-            No products registered on-chain yet for wallet {truncate(account)}. Mint your first product passport above.
+            {activeTab === "inventory"
+              ? "No products currently held in manufacturer inventory."
+              : activeTab === "sold"
+              ? "No products sold to customers yet."
+              : `No products registered on-chain yet for wallet ${truncate(account)}. Mint your first product passport above.`}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -332,58 +435,226 @@ export const ManufacturerPortalPage: React.FC = () => {
                   <th style={{ padding: "0.75rem 0.5rem" }}>ID</th>
                   <th style={{ padding: "0.75rem 0.5rem" }}>Product Name</th>
                   <th style={{ padding: "0.75rem 0.5rem" }}>Model / Serial</th>
-                  <th style={{ padding: "0.75rem 0.5rem" }}>Current Owner</th>
+                  <th style={{ padding: "0.75rem 0.5rem" }}>Current Custody / Owner</th>
                   <th style={{ padding: "0.75rem 0.5rem" }}>Status</th>
                   <th style={{ padding: "0.75rem 0.5rem" }}>Warranty</th>
-                  <th style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>Action</th>
+                  <th style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => (
-                  <tr key={p.passportId.toString()} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                    <td style={{ padding: "0.75rem 0.5rem", fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--accent-primary)" }}>
-                      #{p.passportId.toString()}
-                    </td>
-                    <td style={{ padding: "0.75rem 0.5rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                      {p.productName}
-                    </td>
-                    <td style={{ padding: "0.75rem 0.5rem", color: "var(--text-secondary)" }}>
-                      {p.modelNumber} <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>({p.serialNumber})</span>
-                    </td>
-                    <td style={{ padding: "0.75rem 0.5rem", fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                      {truncate(p.currentOwner)}
-                    </td>
-                    <td style={{ padding: "0.75rem 0.5rem" }}>
-                      <StatusBadge status={p.status} />
-                    </td>
-                    <td style={{ padding: "0.75rem 0.5rem" }}>
-                      <WarrantyBadge warranty={p.warranty} />
-                    </td>
-                    <td style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>
-                      <Link
-                        to={`/verify/${p.passportId.toString()}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "0.25rem",
-                          color: "var(--accent-primary)",
-                          fontSize: "0.8rem",
-                          fontWeight: 600,
-                          textDecoration: "none",
-                        }}
-                      >
-                        View <LuExternalLink />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {displayedProducts.map((p) => {
+                  const inInventory = isProductInInventory(p);
+                  const hasTransferPending = p.pendingTransfer.exists;
+
+                  return (
+                    <tr key={p.passportId.toString()} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
+                      <td style={{ padding: "0.75rem 0.5rem", fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--accent-primary)" }}>
+                        #{p.passportId.toString()}
+                      </td>
+                      <td style={{ padding: "0.75rem 0.5rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                        {p.productName}
+                      </td>
+                      <td style={{ padding: "0.75rem 0.5rem", color: "var(--text-secondary)" }}>
+                        {p.modelNumber} <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>({p.serialNumber})</span>
+                      </td>
+                      <td style={{ padding: "0.75rem 0.5rem" }}>
+                        {inInventory ? (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.3rem",
+                              color: "var(--accent-primary)",
+                              fontWeight: 600,
+                              fontSize: "0.8rem",
+                              background: "rgba(99, 102, 241, 0.12)",
+                              padding: "0.2rem 0.5rem",
+                              borderRadius: "var(--radius-sm)",
+                            }}
+                          >
+                            <LuWarehouse /> Manufacturer Inventory
+                          </span>
+                        ) : (
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                            {truncate(p.currentOwner)}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: "0.75rem 0.5rem" }}>
+                        <StatusBadge status={p.status} isInventory={inInventory} />
+                      </td>
+                      <td style={{ padding: "0.75rem 0.5rem" }}>
+                        <WarrantyBadge warranty={p.warranty} />
+                      </td>
+                      <td style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", justifyContent: "flex-end" }}>
+                          {/* Inventory First Sale Transfer Action */}
+                          {inInventory && (
+                            <>
+                              {!hasTransferPending ? (
+                                <button
+                                  onClick={() => {
+                                    setTransferModalProduct(p);
+                                    setTransferRecipient("");
+                                  }}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "0.25rem",
+                                    padding: "0.3rem 0.6rem",
+                                    background: "var(--accent-primary)",
+                                    color: "#ffffff",
+                                    border: "none",
+                                    borderRadius: "var(--radius-sm)",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  <LuArrowRightLeft /> Transfer / Sell
+                                </button>
+                              ) : (
+                                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                                  <span style={{ fontSize: "0.75rem", color: "var(--status-warning)", background: "rgba(245, 158, 11, 0.12)", padding: "0.2rem 0.4rem", borderRadius: "var(--radius-sm)" }}>
+                                    Pending: {truncate(p.pendingTransfer.to)}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      tx.execute(async (cb) => {
+                                        const res = await PassportService.cancelTransfer(p.passportId, cb);
+                                        fetchRegisteredProducts();
+                                        return res;
+                                      })
+                                    }
+                                    style={{
+                                      padding: "0.2rem 0.4rem",
+                                      background: "rgba(239, 68, 68, 0.2)",
+                                      color: "var(--status-danger)",
+                                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                                      borderRadius: "var(--radius-sm)",
+                                      fontSize: "0.7rem",
+                                      fontWeight: 600,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          <Link
+                            to={`/verify/${p.passportId.toString()}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                              color: "var(--text-secondary)",
+                              fontSize: "0.8rem",
+                              fontWeight: 600,
+                              textDecoration: "none",
+                              padding: "0.3rem 0.5rem",
+                              background: "var(--bg-card)",
+                              border: "1px solid var(--border-subtle)",
+                              borderRadius: "var(--radius-sm)",
+                            }}
+                          >
+                            Verify <LuExternalLink />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Transfer Modal for Inventory Products */}
+      {transferModalProduct && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1100,
+            background: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1.5rem",
+          }}
+        >
+          <div
+            style={{
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-lg)",
+              padding: "2rem",
+              maxWidth: "480px",
+              width: "100%",
+              boxShadow: "var(--shadow-xl)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1.25rem",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                Initiate First Ownership Transfer
+              </h3>
+              <button
+                onClick={() => setTransferModalProduct(null)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "1.2rem", cursor: "pointer" }}
+              >
+                <LuX />
+              </button>
+            </div>
+
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.4 }}>
+              Transferring inventory product <strong>{transferModalProduct.productName}</strong> (Passport #{transferModalProduct.passportId.toString()}) to first customer. The recipient must accept this transfer in their Owner Portal.
+            </p>
+
+            <input
+              type="text"
+              placeholder="First Customer Wallet Address (0x...)"
+              value={transferRecipient}
+              onChange={(e) => setTransferRecipient(e.target.value)}
+              style={{ padding: "0.75rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
+            />
+
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button
+                onClick={() => setTransferModalProduct(null)}
+                style={{ flex: 1, padding: "0.75rem", background: "var(--bg-card)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", fontWeight: 600, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const pid = transferModalProduct.passportId;
+                  const rec = transferRecipient;
+                  setTransferModalProduct(null);
+                  tx.execute(async (cb) => {
+                    const res = await PassportService.initiateTransfer(pid, rec, cb);
+                    fetchRegisteredProducts();
+                    return res;
+                  });
+                }}
+                disabled={!transferRecipient}
+                style={{ flex: 1, padding: "0.75rem", background: "var(--accent-primary)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, cursor: !transferRecipient ? "not-allowed" : "pointer" }}
+              >
+                Initiate First Sale
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <TransactionModal state={tx.state} onClose={tx.reset} />
     </div>
