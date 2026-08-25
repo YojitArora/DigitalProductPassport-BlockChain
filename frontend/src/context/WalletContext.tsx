@@ -11,14 +11,14 @@
  *
  * 2. **Explicit Connection (`connect()`)**:
  *    - Clears the `dpp_wallet_disconnected` persistence flag.
+ *    - Prevents duplicate concurrent popups with `isConnecting` lock.
  *    - Invokes `eth_requestAccounts` to prompt MetaMask connection modal for user approval.
  *    - Sets up the active `BrowserProvider`, `JsonRpcSigner`, and `account`.
  *
  * 3. **Automatic Silent Reconnection (`eth_accounts`)**:
  *    - On initial component mount, queries `ethereum.request({ method: "eth_accounts" })`.
- *    - If the user previously disconnected (`dpp_wallet_disconnected === "true"`), silent reconnection is skipped,
- *      ensuring the app stays disconnected as requested.
- *    - If no explicit disconnect flag is present and the wallet is already authorized, initializes wallet state.
+ *    - If the user previously disconnected (`dpp_wallet_disconnected === "true"`), silent reconnection is skipped.
+ *    - Marks `isInitialized = true` once silent resolution finishes.
  *
  * 4. **Account Change Handling (`accountsChanged` event)**:
  *    - If the user disconnects all accounts or locks MetaMask (`accounts.length === 0`), `disconnect()` is invoked.
@@ -54,6 +54,7 @@ export interface WalletContextValue {
   signer: JsonRpcSigner | null;
   isConnected: boolean;
   isConnecting: boolean;
+  isInitialized: boolean;
   isMetaMaskInstalled: boolean;
   isNetworkSupported: boolean;
   error: string | null;
@@ -77,6 +78,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
   const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const isMetaMaskInstalled = isMetaMaskAvailable();
@@ -128,6 +130,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       return;
     }
 
+    if (isConnecting) return;
+
     setIsConnecting(true);
     setError(null);
 
@@ -150,12 +154,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         setError("No accounts found. Please unlock your MetaMask wallet.");
       }
     } catch (err: any) {
-      console.error("Wallet connection error:", err);
-      setError(formatContractError(err));
+      if (err.code === 4001) {
+        setError("Connection request cancelled by user.");
+      } else if (err.code === -32002) {
+        setError("MetaMask request is already pending. Please check the MetaMask notification popup.");
+      } else {
+        setError(formatContractError(err));
+      }
     } finally {
       setIsConnecting(false);
     }
-  }, [updateWalletState]);
+  }, [isConnecting, updateWalletState]);
 
   /**
    * Resets and clears connected wallet state locally.
@@ -198,11 +207,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
    * Checks if user previously explicitly disconnected. If not, queries `eth_accounts`.
    */
   useEffect(() => {
-    if (!isMetaMaskAvailable()) return;
+    if (!isMetaMaskAvailable()) {
+      setIsInitialized(true);
+      return;
+    }
 
     // Do not auto-reconnect if user explicitly chose to disconnect
     try {
       if (localStorage.getItem(DISCONNECTED_STORAGE_KEY) === "true") {
+        setIsInitialized(true);
         return;
       }
     } catch (e) {
@@ -213,21 +226,23 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     ethereum
       .request({ method: "eth_accounts" })
-      .then((accounts: string[]) => {
+      .then(async (accounts: string[]) => {
         if (accounts && accounts.length > 0) {
-          // Double check disconnect flag before updating
           let isDisconnected = false;
           try {
             isDisconnected = localStorage.getItem(DISCONNECTED_STORAGE_KEY) === "true";
           } catch (e) {}
 
           if (!isDisconnected) {
-            updateWalletState(accounts[0]);
+            await updateWalletState(accounts[0]);
           }
         }
       })
       .catch((err: any) => {
         console.warn("Silent reconnection query (eth_accounts) failed:", err);
+      })
+      .finally(() => {
+        setIsInitialized(true);
       });
   }, [updateWalletState]);
 
@@ -243,7 +258,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (accounts.length === 0) {
         disconnect();
       } else {
-        // If user is currently disconnected by preference, don't auto-connect on account change
         let isDisconnected = false;
         try {
           isDisconnected = localStorage.getItem(DISCONNECTED_STORAGE_KEY) === "true";
@@ -287,6 +301,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         signer,
         isConnected: Boolean(account),
         isConnecting,
+        isInitialized,
         isMetaMaskInstalled,
         isNetworkSupported,
         error,

@@ -57,7 +57,7 @@ const DEFAULT_ROLES: UserRoles = {
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const { account, signer, isConnected, connect, disconnect } = useWallet();
+  const { account, signer, isConnected, isInitialized, connect, disconnect } = useWallet();
 
   const [session, setSession] = useState<AuthSession | null>(() => {
     try {
@@ -140,6 +140,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Authenticates user via Web3 wallet signature verification and detects on-chain permissions.
    */
   const login = useCallback(async (): Promise<boolean> => {
+    if (isAuthenticating) return false;
+
     setIsAuthenticating(true);
     setAuthError(null);
     setFlashMessage(null);
@@ -153,11 +155,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await connect();
         const ethereum = (window as any).ethereum;
         if (!ethereum) {
-          throw new Error("MetaMask is not available.");
+          throw new Error("MetaMask is not installed. Please install MetaMask to continue.");
         }
         const accounts: string[] = await ethereum.request({ method: "eth_requestAccounts" });
         if (!accounts || accounts.length === 0) {
-          throw new Error("No authorized accounts returned by wallet.");
+          throw new Error("No authorized accounts returned by wallet. Please unlock MetaMask.");
         }
         currentAccount = accounts[0];
       }
@@ -177,6 +179,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (signErr.code === 4001) {
           throw new Error("Signature request cancelled by user.");
         }
+        if (signErr.code === -32002) {
+          throw new Error("Signature request is already pending in MetaMask. Please check the notification window.");
+        }
         throw signErr;
       }
 
@@ -192,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAdmin,
         isManufacturer,
         isServiceCenter,
-        isOwner, // Real blockchain verification: only true if wallet owns >= 1 product
+        isOwner,
       };
 
       // 3. Create Valid Session
@@ -217,19 +222,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsAuthenticating(false);
     }
-  }, [account, connect, signer]);
+  }, [account, connect, isAuthenticating, signer]);
 
   /**
-   * Monitor wallet account changes.
+   * Monitor wallet account changes once initialization completes.
    * If wallet is disconnected or account switches away from session account, invalidate session immediately.
    */
   useEffect(() => {
+    if (!isInitialized) return;
+
     if (session) {
       if (!isConnected || !account || session.account.toLowerCase() !== account.toLowerCase()) {
         logout("Wallet disconnected. Please reconnect to continue.");
       }
     }
-  }, [account, isConnected, session, logout]);
+  }, [account, isConnected, isInitialized, session, logout]);
 
   return (
     <AuthContext.Provider
