@@ -41,6 +41,7 @@ export const ManufacturerPortalPage: React.FC = () => {
   // Manufacturer Mint Form
   const [mintForm, setMintForm] = useState({
     initialOwner: "",
+    keepInInventory: true,
     productName: "",
     brand: "",
     category: "",
@@ -150,20 +151,19 @@ export const ManufacturerPortalPage: React.FC = () => {
             <LuPlus style={{ color: "var(--accent-primary)" }} /> Mint Product Passport
           </h3>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
-            Create an immutable Digital Product Passport on-chain. Leave the Initial Owner empty to hold the product in <strong>Manufacturer Inventory</strong>.
+            Create an immutable Digital Product Passport on-chain for customer-owned goods or factory inventory.
           </p>
 
           <form
             onSubmit={(e) => {
               e.preventDefault();
               const mDate = Math.floor(new Date(mintForm.manufactureDate || Date.now()).getTime() / 1000);
-              // Default to manufacturer's wallet address if left blank for inventory
-              const targetInitialOwner = mintForm.initialOwner.trim() || account;
 
               tx.execute(async (cb) => {
                 const res = await PassportService.registerProduct(
                   {
-                    initialOwner: targetInitialOwner,
+                    initialOwner: mintForm.initialOwner,
+                    keepInInventory: mintForm.keepInInventory,
                     productName: mintForm.productName,
                     brand: mintForm.brand,
                     category: mintForm.category,
@@ -176,6 +176,7 @@ export const ManufacturerPortalPage: React.FC = () => {
                 // Reset form
                 setMintForm({
                   initialOwner: "",
+                  keepInInventory: true,
                   productName: "",
                   brand: "",
                   category: "",
@@ -189,74 +190,199 @@ export const ManufacturerPortalPage: React.FC = () => {
             }}
             style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
           >
+            {/* Inventory / Initial Owner Explicit Control */}
+            <div
+              style={{
+                background: "var(--bg-card)",
+                padding: "0.85rem",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--border-subtle)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem",
+              }}
+            >
+              <label
+                htmlFor="mfg-keep-in-inventory"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  cursor: "pointer",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  userSelect: "none",
+                }}
+              >
+                <input
+                  id="mfg-keep-in-inventory"
+                  name="keepInInventory"
+                  type="checkbox"
+                  checked={mintForm.keepInInventory}
+                  onChange={(e) =>
+                    setMintForm({
+                      ...mintForm,
+                      keepInInventory: e.target.checked,
+                      initialOwner: e.target.checked ? "" : mintForm.initialOwner,
+                    })
+                  }
+                  style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "var(--accent-primary)" }}
+                />
+                <span>Keep Product in Manufacturer Inventory</span>
+              </label>
+
+              {mintForm.keepInInventory ? (
+                <div
+                  style={{
+                    fontSize: "0.775rem",
+                    color: "var(--accent-primary)",
+                    background: "rgba(99, 102, 241, 0.1)",
+                    padding: "0.5rem 0.75rem",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid rgba(99, 102, 241, 0.25)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <LuWarehouse style={{ fontSize: "1.1rem", flexShrink: 0 }} />
+                  <div>
+                    The manufacturer will temporarily hold product custody until the first sale. This item will appear in <strong>Manufacturer Inventory</strong>.
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="mfg-initial-owner" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.25rem", display: "block" }}>
+                    Initial Customer Owner Address (Required):
+                  </label>
+                  <input
+                    id="mfg-initial-owner"
+                    name="initialOwner"
+                    type="text"
+                    required={!mintForm.keepInInventory}
+                    placeholder="0x... Initial Customer Wallet Address"
+                    value={mintForm.initialOwner}
+                    onChange={(e) => setMintForm({ ...mintForm, initialOwner: e.target.value })}
+                    autoComplete="off"
+                    style={{
+                      width: "100%",
+                      padding: "0.6rem",
+                      background: "var(--bg-secondary)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "var(--radius-sm)",
+                      color: "var(--text-primary)",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.85rem",
+                    }}
+                  />
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                    Direct customer sale: the specified customer address will become the immediate owner upon minting.
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div>
-              <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "flex", justifyContent: "space-between" }}>
-                <span>Initial Owner (Optional):</span>
-                <span style={{ color: "var(--accent-primary)" }}>Leave empty for Inventory</span>
+              <label htmlFor="mfg-product-name" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+                Product Name
               </label>
               <input
+                id="mfg-product-name"
+                name="productName"
                 type="text"
-                placeholder="0x... (Leave empty for Manufacturer Inventory)"
-                value={mintForm.initialOwner}
-                onChange={(e) => setMintForm({ ...mintForm, initialOwner: e.target.value })}
-                style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
+                required
+                placeholder="Product Name (e.g. Royal Chronometer)"
+                value={mintForm.productName}
+                onChange={(e) => setMintForm({ ...mintForm, productName: e.target.value })}
+                autoComplete="off"
+                style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
               />
             </div>
 
-            <input
-              type="text"
-              required
-              placeholder="Product Name (e.g. Royal Chronometer)"
-              value={mintForm.productName}
-              onChange={(e) => setMintForm({ ...mintForm, productName: e.target.value })}
-              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-            />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-              <input
-                type="text"
-                required
-                placeholder="Brand"
-                value={mintForm.brand}
-                onChange={(e) => setMintForm({ ...mintForm, brand: e.target.value })}
-                style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-              />
-              <input
-                type="text"
-                required
-                placeholder="Category"
-                value={mintForm.category}
-                onChange={(e) => setMintForm({ ...mintForm, category: e.target.value })}
-                style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-              />
+              <div>
+                <label htmlFor="mfg-brand" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+                  Brand
+                </label>
+                <input
+                  id="mfg-brand"
+                  name="brand"
+                  type="text"
+                  required
+                  placeholder="Brand"
+                  value={mintForm.brand}
+                  onChange={(e) => setMintForm({ ...mintForm, brand: e.target.value })}
+                  autoComplete="off"
+                  style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+                />
+              </div>
+              <div>
+                <label htmlFor="mfg-category" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+                  Category
+                </label>
+                <input
+                  id="mfg-category"
+                  name="category"
+                  type="text"
+                  required
+                  placeholder="Category"
+                  value={mintForm.category}
+                  onChange={(e) => setMintForm({ ...mintForm, category: e.target.value })}
+                  autoComplete="off"
+                  style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+                />
+              </div>
             </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-              <input
-                type="text"
-                required
-                placeholder="Model Number"
-                value={mintForm.modelNumber}
-                onChange={(e) => setMintForm({ ...mintForm, modelNumber: e.target.value })}
-                style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-              />
-              <input
-                type="text"
-                required
-                placeholder="Serial Number"
-                value={mintForm.serialNumber}
-                onChange={(e) => setMintForm({ ...mintForm, serialNumber: e.target.value })}
-                style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-              />
+              <div>
+                <label htmlFor="mfg-model-number" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+                  Model Number
+                </label>
+                <input
+                  id="mfg-model-number"
+                  name="modelNumber"
+                  type="text"
+                  required
+                  placeholder="Model Number"
+                  value={mintForm.modelNumber}
+                  onChange={(e) => setMintForm({ ...mintForm, modelNumber: e.target.value })}
+                  autoComplete="off"
+                  style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+                />
+              </div>
+              <div>
+                <label htmlFor="mfg-serial-number" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+                  Serial Number
+                </label>
+                <input
+                  id="mfg-serial-number"
+                  name="serialNumber"
+                  type="text"
+                  required
+                  placeholder="Serial Number"
+                  value={mintForm.serialNumber}
+                  onChange={(e) => setMintForm({ ...mintForm, serialNumber: e.target.value })}
+                  autoComplete="off"
+                  style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
+                />
+              </div>
             </div>
+
             <div>
-              <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+              <label htmlFor="mfg-manufacture-date" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
                 Manufacture Date:
               </label>
               <input
+                id="mfg-manufacture-date"
+                name="manufactureDate"
                 type="date"
                 required
                 value={mintForm.manufactureDate}
                 onChange={(e) => setMintForm({ ...mintForm, manufactureDate: e.target.value })}
-                style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+                style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
               />
             </div>
             <button
@@ -292,23 +418,40 @@ export const ManufacturerPortalPage: React.FC = () => {
             }}
             style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
           >
-            <input
-              type="number"
-              required
-              placeholder="Passport ID (e.g. 1)"
-              value={warrantyForm.passportId}
-              onChange={(e) => setWarrantyForm({ ...warrantyForm, passportId: e.target.value })}
-              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-            />
-            <input
-              type="number"
-              required
-              min="1"
-              placeholder="Warranty Duration (Days, e.g. 365, 730)"
-              value={warrantyForm.durationDays}
-              onChange={(e) => setWarrantyForm({ ...warrantyForm, durationDays: e.target.value })}
-              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-            />
+            <div>
+              <label htmlFor="mfg-warranty-passport-id" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+                Passport ID
+              </label>
+              <input
+                id="mfg-warranty-passport-id"
+                name="passportId"
+                type="number"
+                required
+                placeholder="Passport ID (e.g. 1)"
+                value={warrantyForm.passportId}
+                onChange={(e) => setWarrantyForm({ ...warrantyForm, passportId: e.target.value })}
+                autoComplete="off"
+                style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="mfg-warranty-duration-days" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+                Warranty Duration (Days)
+              </label>
+              <input
+                id="mfg-warranty-duration-days"
+                name="durationDays"
+                type="number"
+                required
+                min="1"
+                placeholder="Warranty Duration (Days, e.g. 365, 730)"
+                value={warrantyForm.durationDays}
+                onChange={(e) => setWarrantyForm({ ...warrantyForm, durationDays: e.target.value })}
+                autoComplete="off"
+                style={{ width: "100%", padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
+              />
+            </div>
             <button
               type="submit"
               style={{ padding: "0.75rem", background: "var(--status-success)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, marginTop: "0.5rem", cursor: "pointer", border: "none" }}
@@ -620,12 +763,18 @@ export const ManufacturerPortalPage: React.FC = () => {
               Transferring inventory product <strong>{transferModalProduct.productName}</strong> (Passport #{transferModalProduct.passportId.toString()}) to first customer. The recipient must accept this transfer in their Owner Portal.
             </p>
 
+            <label htmlFor="mfg-transfer-recipient" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+              First Customer Wallet Address
+            </label>
             <input
+              id="mfg-transfer-recipient"
+              name="transferRecipient"
               type="text"
               placeholder="First Customer Wallet Address (0x...)"
               value={transferRecipient}
               onChange={(e) => setTransferRecipient(e.target.value)}
-              style={{ padding: "0.75rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
+              autoComplete="off"
+              style={{ width: "100%", padding: "0.75rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
             />
 
             <div style={{ display: "flex", gap: "0.75rem" }}>

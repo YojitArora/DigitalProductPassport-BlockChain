@@ -359,7 +359,7 @@ describe("PassportRegistry - Manufacturer & Product Passport System", function (
       ).to.be.revertedWithCustomError(passportRegistry, "Unauthorized");
     });
 
-    it("should revert with ZeroAddress when initialOwner is address(0)", async function () {
+    it("should revert with ZeroAddress when initialOwner is address(0) in registerProduct", async function () {
       const { passportRegistry, manufacturer1, ethers } = await deployFixture();
 
       await expect(
@@ -373,6 +373,25 @@ describe("PassportRegistry - Manufacturer & Product Passport System", function (
           validProduct.manufactureDate
         )
       ).to.be.revertedWithCustomError(passportRegistry, "ZeroAddress");
+    });
+
+    it("should successfully mint into manufacturer inventory using explicit registerInventoryProduct", async function () {
+      const { passportRegistry, manufacturer1 } = await deployFixture();
+
+      const tx = await passportRegistry.connect(manufacturer1).registerInventoryProduct(
+        validProduct.productName,
+        validProduct.brand,
+        validProduct.category,
+        validProduct.modelNumber,
+        validProduct.serialNumber,
+        validProduct.manufactureDate
+      );
+      await tx.wait();
+
+      const product = await passportRegistry.getProduct(1n);
+      expect(product.currentOwner).to.equal(manufacturer1.address);
+      expect(product.manufacturer).to.equal(manufacturer1.address);
+      expect(product.productName).to.equal(validProduct.productName);
     });
 
     it("should revert with EmptyString on empty input strings", async function () {

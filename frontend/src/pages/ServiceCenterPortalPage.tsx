@@ -124,12 +124,18 @@ export const ServiceCenterPortalPage: React.FC = () => {
             Transition product to UnderService status and lock servicing rights to your service center wallet.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <label htmlFor="sc-start-passport-id" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+              Passport ID
+            </label>
             <input
+              id="sc-start-passport-id"
+              name="startPassportId"
               type="number"
               placeholder="Passport ID (e.g. 1)"
               value={serviceStartId}
               onChange={(e) => setServiceStartId(e.target.value)}
-              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+              autoComplete="off"
+              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
             />
             <button
               onClick={() =>
@@ -140,7 +146,7 @@ export const ServiceCenterPortalPage: React.FC = () => {
                 })
               }
               disabled={!serviceStartId}
-              style={{ padding: "0.75rem", background: "var(--status-warning)", color: "#111827", borderRadius: "var(--radius-md)", fontWeight: 700, marginTop: "0.25rem" }}
+              style={{ padding: "0.75rem", background: "var(--status-warning)", color: "#111827", borderRadius: "var(--radius-md)", fontWeight: 700, marginTop: "0.25rem", cursor: !serviceStartId ? "not-allowed" : "pointer" }}
             >
               Start Service Session
             </button>
@@ -156,19 +162,30 @@ export const ServiceCenterPortalPage: React.FC = () => {
             Log permanent repair event metadata, increment repair count, and restore previous operational status.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <label htmlFor="sc-complete-passport-id" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+              Passport ID
+            </label>
             <input
+              id="sc-complete-passport-id"
+              name="completePassportId"
               type="number"
               placeholder="Passport ID (e.g. 1)"
               value={serviceCompleteId}
               onChange={(e) => setServiceCompleteId(e.target.value)}
-              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+              autoComplete="off"
+              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontSize: "0.85rem" }}
             />
+            <label htmlFor="sc-repair-notes" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+              Certified Service / Repair Notes
+            </label>
             <textarea
+              id="sc-repair-notes"
+              name="repairNotes"
               placeholder="Certified Service / Repair Notes (e.g. Ultrasonic clean, movement lubrication, waterproof pressure testing passed.)"
               value={serviceDescription}
               onChange={(e) => setServiceDescription(e.target.value)}
               rows={3}
-              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}
+              style={{ padding: "0.6rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-sans)", fontSize: "0.85rem" }}
             />
             <button
               onClick={() =>
@@ -179,7 +196,7 @@ export const ServiceCenterPortalPage: React.FC = () => {
                 })
               }
               disabled={!serviceCompleteId || !serviceDescription}
-              style={{ padding: "0.75rem", background: "var(--status-success)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, marginTop: "0.25rem" }}
+              style={{ padding: "0.75rem", background: "var(--status-success)", color: "#ffffff", borderRadius: "var(--radius-md)", fontWeight: 600, marginTop: "0.25rem", cursor: (!serviceCompleteId || !serviceDescription) ? "not-allowed" : "pointer" }}
             >
               Complete Service & Log Repair
             </button>

@@ -496,16 +496,18 @@ export const OwnerPortalPage: React.FC = () => {
               </button>
             </div>
 
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.4 }}>
-              Initiating transfer for <strong>{transferModalProduct.productName}</strong> (Passport #{transferModalProduct.passportId.toString()}). The recipient address must accept this transfer to complete custody reassignment.
-            </p>
-
+            <label htmlFor="owner-transfer-recipient" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>
+              Recipient Wallet Address
+            </label>
             <input
+              id="owner-transfer-recipient"
+              name="transferRecipient"
               type="text"
               placeholder="Recipient Address (0x...)"
               value={transferRecipient}
               onChange={(e) => setTransferRecipient(e.target.value)}
-              style={{ padding: "0.75rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}
+              autoComplete="off"
+              style={{ width: "100%", padding: "0.75rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}
             />
 
             <div style={{ display: "flex", gap: "0.75rem" }}>

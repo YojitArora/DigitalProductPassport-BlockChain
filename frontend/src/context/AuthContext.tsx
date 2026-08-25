@@ -63,7 +63,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const cached = sessionStorage.getItem(AUTH_STORAGE_KEY);
       if (cached) {
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed.account === "string") {
+          return {
+            ...parsed,
+            roles: {
+              ...DEFAULT_ROLES,
+              ...(parsed.roles || {}),
+            },
+          };
+        }
       }
     } catch (e) {
       console.warn("Failed to parse cached auth session:", e);
@@ -78,7 +87,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const clearAuthError = useCallback(() => setAuthError(null), []);
   const clearFlashMessage = useCallback(() => setFlashMessage(null), []);
 
-  const roles: UserRoles = session ? session.roles : DEFAULT_ROLES;
+  const roles: UserRoles = {
+    ...DEFAULT_ROLES,
+    ...(session?.roles || {}),
+  };
   const isAuthenticated = Boolean(
     session &&
     isConnected &&

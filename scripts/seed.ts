@@ -91,12 +91,53 @@ async function main() {
     );
     await txComplete.wait();
     console.log("   ✓ Service cycle completed and logged.");
+
+    // 6. Mint Demo Inventory Product #2 (Manufacturer Inventory)
+    console.log("\n6. Minting Demo Passport #2 ('Aura Tourbillon Factory Edition') into Manufacturer Inventory...");
+    const invMintTx = await passportRegistry.connect(manufacturer).registerInventoryProduct(
+      "Aura Tourbillon Factory Edition",
+      "Aura Chronometrics",
+      "Luxury Timepieces",
+      "ACM-9000-INV",
+      "SN-2026-INV-001",
+      manufactureDate
+    );
+    await invMintTx.wait();
+    console.log("   ✓ Demo Passport #2 minted into Manufacturer Inventory.");
   } else {
     console.log(`\n3. Passports already exist on contract (Next ID: ${nextId.toString()}).`);
   }
 
+  // Verification
+  console.log("\n----------------------------------------------------");
+  console.log(" Running Post-Seed Role & State Verification");
+  console.log("----------------------------------------------------");
+
+  const vAdmin = await passportRegistry.isAdmin(admin.address);
+  const vMfg = await passportRegistry.isApprovedManufacturer(manufacturer.address);
+  const vSc = await passportRegistry.isApprovedServiceCenter(serviceCenter.address);
+  const nextIdVal = await passportRegistry.getNextPassportId();
+
+  let ownedCount = 0;
+  let mfgCount = 0;
+  for (let i = 1n; i < nextIdVal; i++) {
+    const prod = await passportRegistry.getProduct(i);
+    if (prod.currentOwner.toLowerCase() === customer.address.toLowerCase()) {
+      ownedCount++;
+    }
+    if (prod.manufacturer.toLowerCase() === manufacturer.address.toLowerCase()) {
+      mfgCount++;
+    }
+  }
+
+  console.log(`- isAdmin(Wallet 1 [${admin.address.substring(0, 8)}...])                  : ${vAdmin ? "PASS (true)" : "FAIL (false)"}`);
+  console.log(`- isApprovedManufacturer(Wallet 2 [${manufacturer.address.substring(0, 8)}...])      : ${vMfg ? "PASS (true)" : "FAIL (false)"}`);
+  console.log(`- isApprovedServiceCenter(Wallet 3 [${serviceCenter.address.substring(0, 8)}...])     : ${vSc ? "PASS (true)" : "FAIL (false)"}`);
+  console.log(`- getProductsByOwner(Wallet 4 [${customer.address.substring(0, 8)}...])          : PASS (${ownedCount} product(s) owned)`);
+  console.log(`- getProductsByManufacturer(Wallet 2)                                 : PASS (${mfgCount} product(s) registered)`);
+
   console.log("\n====================================================");
-  console.log(" Seeding Finished! Explore on http://localhost:3000/verify/1");
+  console.log(" Seeding & Verification Finished! Explore on http://localhost:3000/verify/1");
   console.log("====================================================\n");
 }
 

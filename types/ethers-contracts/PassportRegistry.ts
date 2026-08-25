@@ -33,7 +33,7 @@ export declare namespace PassportRegistry {
     }
 
   export interface PassportRegistryInterface extends Interface {
-    getFunction(nameOrSignature: "MAX_BRAND_LENGTH" | "MAX_CATEGORY_LENGTH" | "MAX_MODEL_NUMBER_LENGTH" | "MAX_NAME_LENGTH" | "MAX_PRODUCT_NAME_LENGTH" | "MAX_REPAIR_DESCRIPTION_LENGTH" | "MAX_SERIAL_NUMBER_LENGTH" | "acceptTransfer" | "activateWarranty" | "addAdmin" | "cancelTransfer" | "completeService" | "getCurrentOwner" | "getLastRepairTimestamp" | "getManufacturer" | "getNextPassportId" | "getPendingTransfer" | "getProduct" | "getProductStatus" | "getRepairCount" | "getServiceCenter" | "getWarranty" | "getWarrantyEndTimestamp" | "hasPendingTransfer" | "initiateTransfer" | "isAdmin" | "isApprovedManufacturer" | "isApprovedServiceCenter" | "isUnderService" | "isWarrantyActive" | "passportExists" | "registerManufacturer" | "registerProduct" | "registerServiceCenter" | "reportRecovered" | "reportStolen" | "revokeManufacturer" | "revokeServiceCenter" | "startService"): FunctionFragment;
+    getFunction(nameOrSignature: "MAX_BRAND_LENGTH" | "MAX_CATEGORY_LENGTH" | "MAX_MODEL_NUMBER_LENGTH" | "MAX_NAME_LENGTH" | "MAX_PRODUCT_NAME_LENGTH" | "MAX_REPAIR_DESCRIPTION_LENGTH" | "MAX_SERIAL_NUMBER_LENGTH" | "acceptTransfer" | "activateWarranty" | "addAdmin" | "cancelTransfer" | "completeService" | "getCurrentOwner" | "getLastRepairTimestamp" | "getManufacturer" | "getNextPassportId" | "getPendingTransfer" | "getProduct" | "getProductStatus" | "getRepairCount" | "getServiceCenter" | "getWarranty" | "getWarrantyEndTimestamp" | "hasPendingTransfer" | "initiateTransfer" | "isAdmin" | "isApprovedManufacturer" | "isApprovedServiceCenter" | "isUnderService" | "isWarrantyActive" | "passportExists" | "registerInventoryProduct" | "registerManufacturer" | "registerProduct" | "registerServiceCenter" | "reportRecovered" | "reportStolen" | "revokeManufacturer" | "revokeServiceCenter" | "startService"): FunctionFragment;
 
     getEvent(nameOrSignatureOrTopic: "AdminAdded" | "ManufacturerRegistered" | "ManufacturerRevoked" | "OwnershipTransferAccepted" | "OwnershipTransferCancelled" | "OwnershipTransferRequested" | "ProductRecovered" | "ProductRegistered" | "ProductReportedStolen" | "RepairAdded" | "ServiceCenterRegistered" | "ServiceCenterRevoked" | "ServiceCompleted" | "ServiceStarted" | "WarrantyActivated"): EventFragment;
 
@@ -68,6 +68,7 @@ encodeFunctionData(functionFragment: 'isApprovedServiceCenter', values: [Address
 encodeFunctionData(functionFragment: 'isUnderService', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'isWarrantyActive', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'passportExists', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'registerInventoryProduct', values: [string, string, string, string, string, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'registerManufacturer', values: [AddressLike, string]): string;
 encodeFunctionData(functionFragment: 'registerProduct', values: [AddressLike, string, string, string, string, string, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'registerServiceCenter', values: [AddressLike, string]): string;
@@ -108,6 +109,7 @@ decodeFunctionResult(functionFragment: 'isApprovedServiceCenter', data: BytesLik
 decodeFunctionResult(functionFragment: 'isUnderService', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'isWarrantyActive', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'passportExists', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'registerInventoryProduct', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'registerManufacturer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'registerProduct', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'registerServiceCenter', data: BytesLike): Result;
@@ -581,6 +583,14 @@ decodeFunctionResult(functionFragment: 'startService', data: BytesLike): Result;
     
 
     
+    registerInventoryProduct: TypedContractMethod<
+      [productName: string, brand: string, category: string, modelNumber: string, serialNumber: string, manufactureDate: BigNumberish, ],
+      [bigint],
+      'nonpayable'
+    >
+    
+
+    
     registerManufacturer: TypedContractMethod<
       [manufacturer: AddressLike, name: string, ],
       [void],
@@ -801,6 +811,11 @@ getFunction(nameOrSignature: 'passportExists'): TypedContractMethod<
       [passportId: BigNumberish, ],
       [boolean],
       'view'
+    >;
+getFunction(nameOrSignature: 'registerInventoryProduct'): TypedContractMethod<
+      [productName: string, brand: string, category: string, modelNumber: string, serialNumber: string, manufactureDate: BigNumberish, ],
+      [bigint],
+      'nonpayable'
     >;
 getFunction(nameOrSignature: 'registerManufacturer'): TypedContractMethod<
       [manufacturer: AddressLike, name: string, ],

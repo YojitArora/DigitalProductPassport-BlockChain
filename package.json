@@ -7,6 +7,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "demo:setup": "hardhat run scripts/deploy.ts --network ganache",
+    "seed:demo": "hardhat run scripts/deploy.ts --network ganache",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:ganache": "hardhat run scripts/deploy.ts --network ganache",
     "seed:local": "hardhat run scripts/seed.ts --network localhost",

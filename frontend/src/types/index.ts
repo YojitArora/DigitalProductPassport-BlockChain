@@ -93,7 +93,8 @@ export interface Product {
  * Parameters required to register/mint a new Product Passport.
  */
 export interface RegisterProductParams {
-  initialOwner: string;
+  initialOwner?: string;
+  keepInInventory?: boolean;
   productName: string;
   brand: string;
   category: string;

@@ -36,28 +36,44 @@ const CUSTOM_ERROR_MESSAGES: Record<string, string> = {
 };
 
 /**
- * Extracts and decodes Solidity custom error data from ethers error objects.
+ * Recursively inspects an error object for hex error data.
+ */
+function findHexData(obj: any): string | null {
+  if (!obj) return null;
+  if (typeof obj === "string") {
+    if (obj.startsWith("0x") && obj.length >= 10) return obj;
+    return null;
+  }
+  if (typeof obj === "object") {
+    if (typeof obj.data === "string" && obj.data.startsWith("0x")) return obj.data;
+    if (typeof obj.return === "string" && obj.return.startsWith("0x")) return obj.return;
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === "object" || typeof obj[key] === "string") {
+        const found = findHexData(obj[key]);
+        if (found) return found;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts and decodes Solidity custom error data from ethers / Ganache error objects.
  */
 function extractCustomError(error: any): { name: string; args?: any } | null {
   if (!error) return null;
 
-  // Direct errorName from ethers v6
+  // 1. Direct errorName from ethers v6
   if (error.errorName && CUSTOM_ERROR_MESSAGES[error.errorName]) {
     return { name: error.errorName, args: error.errorArgs };
   }
 
-  // Check nested error data payloads
-  const data =
-    error.data ||
-    error.error?.data ||
-    error.info?.error?.data ||
-    error.receipt?.revert?.data ||
-    error.info?.payload?.error?.data;
-
-  if (typeof data === "string" && data.startsWith("0x")) {
+  // 2. Check nested error data payloads
+  const hexData = findHexData(error);
+  if (hexData) {
     try {
-      const parsed = contractInterface.parseError(data);
-      if (parsed) {
+      const parsed = contractInterface.parseError(hexData);
+      if (parsed && CUSTOM_ERROR_MESSAGES[parsed.name]) {
         return { name: parsed.name, args: parsed.args };
       }
     } catch {
@@ -65,11 +81,21 @@ function extractCustomError(error: any): { name: string; args?: any } | null {
     }
   }
 
-  // Check error message string for custom error names
-  const message = error.message || "";
-  for (const errorName of Object.keys(CUSTOM_ERROR_MESSAGES)) {
-    if (message.includes(errorName)) {
-      return { name: errorName };
+  // 3. Check error string and nested message strings for custom error names
+  const allMessages: string[] = [
+    error.message,
+    error.shortMessage,
+    error.reason,
+    error.info?.error?.message,
+    error.error?.message,
+    error.cause?.message,
+  ].filter(Boolean);
+
+  for (const msg of allMessages) {
+    for (const errorName of Object.keys(CUSTOM_ERROR_MESSAGES)) {
+      if (msg.includes(errorName)) {
+        return { name: errorName };
+      }
     }
   }
 
@@ -97,7 +123,7 @@ export function formatContractError(error: any): string {
     return "Transaction was cancelled / rejected in your wallet.";
   }
 
-  // 2. Custom contract errors
+  // 2. Custom contract errors (e.g. DuplicateSerialNumber, ZeroAddress, Unauthorized)
   const customError = extractCustomError(error);
   if (customError && CUSTOM_ERROR_MESSAGES[customError.name]) {
     return CUSTOM_ERROR_MESSAGES[customError.name];
@@ -125,22 +151,39 @@ export function formatContractError(error: any): string {
     return "Transaction nonce conflict. Please reset your MetaMask account activity or wait for previous transactions to settle.";
   }
 
-  // 6. Generic reason / shortMessage fallback
-  if (error.shortMessage) {
-    return error.shortMessage;
-  }
+  // 6. Check for meaningful string in reason or nested error messages (ignoring "missing revert data")
+  const nestedMessage =
+    error.info?.error?.message ||
+    error.error?.message ||
+    error.cause?.message ||
+    error.reason;
 
-  if (typeof error.reason === "string") {
-    return error.reason;
-  }
-
-  if (typeof error.message === "string") {
-    // Clean up internal ethers RPC trace prefixes
-    const cleaned = error.message.replace(/^(execution reverted:?|VM Exception while processing transaction:?)\s*/i, "").trim();
-    if (cleaned.length > 0 && cleaned.length < 150) {
+  if (nestedMessage && typeof nestedMessage === "string") {
+    const cleaned = nestedMessage
+      .replace(/^(execution reverted:?|VM Exception while processing transaction:?)\s*/i, "")
+      .trim();
+    if (cleaned.length > 0 && !cleaned.toLowerCase().includes("missing revert data")) {
       return cleaned;
     }
   }
 
-  return "Transaction failed. Please check the contract requirements and try again.";
+  // 7. Generic reason / shortMessage fallback (filter out "missing revert data")
+  if (error.shortMessage && !error.shortMessage.toLowerCase().includes("missing revert data")) {
+    return error.shortMessage;
+  }
+
+  if (typeof error.message === "string") {
+    const cleaned = error.message
+      .replace(/^(execution reverted:?|VM Exception while processing transaction:?)\s*/i, "")
+      .trim();
+    if (
+      cleaned.length > 0 &&
+      cleaned.length < 150 &&
+      !cleaned.toLowerCase().includes("missing revert data")
+    ) {
+      return cleaned;
+    }
+  }
+
+  return "Transaction failed during blockchain execution. Please verify input fields and role permissions.";
 }

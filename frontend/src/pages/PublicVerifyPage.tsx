@@ -200,10 +200,14 @@ export const PublicVerifyPage: React.FC = () => {
         </div>
 
         <input
+          id="public-verify-passport-id"
+          name="passportId"
           type="text"
           value={searchId}
           onChange={(e) => setSearchId(e.target.value)}
           placeholder="Enter Passport ID (e.g. 1, 2, 3...)"
+          aria-label="Enter Passport ID"
+          autoComplete="off"
           style={{
             flex: 1,
             background: "transparent",

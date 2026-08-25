@@ -746,9 +746,8 @@ contract PassportRegistry {
     /* ================================================================ */
 
     /**
-     * @notice Mints and registers a new Digital Product Passport on-chain.
-     * @dev Restricts execution to approved manufacturers. Generates an auto-incrementing Passport ID.
-     *      Enforces uniqueness on (msg.sender, serialNumber).
+     * @notice Mints and registers a new customer-owned Digital Product Passport on-chain.
+     * @dev Restricts execution to approved manufacturers. Enforces non-zero initialOwner.
      * @param initialOwner Wallet address of the initial product owner (cannot be address(0)).
      * @param productName Commercial name of the product (1 to 128 bytes).
      * @param brand Brand label or manufacturer brand identifier (1 to 64 bytes).
@@ -770,6 +769,59 @@ contract PassportRegistry {
         if (initialOwner == address(0)) {
             revert ZeroAddress();
         }
+        return _registerProductInternal(
+            initialOwner,
+            productName,
+            brand,
+            category,
+            modelNumber,
+            serialNumber,
+            manufactureDate
+        );
+    }
+
+    /**
+     * @notice Mints and registers a new Digital Product Passport directly into Manufacturer Inventory (unsold stock).
+     * @dev Restricts execution to approved manufacturers. Explicitly assigns msg.sender (manufacturer) as initial custodian.
+     * @param productName Commercial name of the product (1 to 128 bytes).
+     * @param brand Brand label or manufacturer brand identifier (1 to 64 bytes).
+     * @param category Classification category of the product (1 to 64 bytes).
+     * @param modelNumber Model code or reference number (1 to 64 bytes).
+     * @param serialNumber Physical serial number unique to the manufacturer (1 to 64 bytes).
+     * @param manufactureDate Unix timestamp of manufacturing (must be > 0 and <= block.timestamp).
+     * @return passportId The newly allocated unique Passport ID.
+     */
+    function registerInventoryProduct(
+        string calldata productName,
+        string calldata brand,
+        string calldata category,
+        string calldata modelNumber,
+        string calldata serialNumber,
+        uint256 manufactureDate
+    ) external onlyApprovedManufacturer returns (uint256 passportId) {
+        return _registerProductInternal(
+            msg.sender,
+            productName,
+            brand,
+            category,
+            modelNumber,
+            serialNumber,
+            manufactureDate
+        );
+    }
+
+    /**
+     * @dev Internal product registration core logic reused by registerProduct and registerInventoryProduct.
+     */
+    function _registerProductInternal(
+        address ownerAddress,
+        string calldata productName,
+        string calldata brand,
+        string calldata category,
+        string calldata modelNumber,
+        string calldata serialNumber,
+        uint256 manufactureDate
+    ) internal returns (uint256 passportId) {
         _validateStringField(productName, "productName", MAX_PRODUCT_NAME_LENGTH);
         _validateStringField(brand, "brand", MAX_BRAND_LENGTH);
         _validateStringField(category, "category", MAX_CATEGORY_LENGTH);
@@ -791,7 +843,7 @@ contract PassportRegistry {
         Product storage p = products[passportId];
         p.passportId = passportId;
         p.manufacturer = msg.sender;
-        p.currentOwner = initialOwner;
+        p.currentOwner = ownerAddress;
         _updateProductStatus(p, ProductStatus.Active);
         p.previousOperationalStatus = ProductStatus.Active;
         p.manufactureDate = manufactureDate;
@@ -805,7 +857,7 @@ contract PassportRegistry {
         emit ProductRegistered(
             passportId,
             msg.sender,
-            initialOwner,
+            ownerAddress,
             serialNumber,
             productName,
             block.timestamp

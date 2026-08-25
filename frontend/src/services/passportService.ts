@@ -76,6 +76,14 @@ async function executeTransaction(
 
     const signer = await getSigner();
     const contract = await getPassportContract(signer);
+    const contractAddr = await contract.getAddress();
+    const signerAddr = await signer.getAddress();
+    const network = await signer.provider.getNetwork();
+
+    console.log(`[PassportService] Executing "${actionName}"`);
+    console.log(` - Contract Address: ${contractAddr}`);
+    console.log(` - Signer Address: ${signerAddr}`);
+    console.log(` - Chain ID: ${network.chainId.toString()}`);
 
     onStateChange?.({
       status: "awaiting_wallet_confirmation",
@@ -260,23 +268,92 @@ export class PassportService {
 
   /**
    * Mints and registers a new Digital Product Passport on-chain.
+   * If `params.keepInInventory` is true, explicitly calls `registerInventoryProduct`.
+   * Otherwise, calls `registerProduct` with the designated `params.initialOwner`.
    */
   static async registerProduct(
     params: RegisterProductParams,
     onStateChange?: StateChangeCallback
   ): Promise<{ passportId?: bigint; txHash: string; receipt: ContractTransactionReceipt }> {
+    const isInventory = Boolean(params.keepInInventory);
+    const actionName = isInventory
+      ? "Inventory Product Registration"
+      : "Product Registration";
+
+    console.log(`[PassportService.registerProduct] Target Workflow: ${isInventory ? "Manufacturer Inventory" : "Customer-Owned"}`);
+    console.log(" - productName:", params.productName);
+    console.log(" - brand:", params.brand);
+    console.log(" - category:", params.category);
+    console.log(" - modelNumber:", params.modelNumber);
+    console.log(" - serialNumber:", params.serialNumber);
+    console.log(" - manufactureDate:", params.manufactureDate.toString());
+    console.log(" - initialOwner:", params.initialOwner || "(None / Inventory)");
+    console.log(" - keepInInventory:", isInventory);
+
     const res = await executeTransaction(
-      "Product Registration",
-      (contract) =>
-        contract.registerProduct(
-          params.initialOwner,
-          params.productName,
-          params.brand,
-          params.category,
-          params.modelNumber,
-          params.serialNumber,
-          params.manufactureDate
-        ),
+      actionName,
+      async (contract) => {
+        if (isInventory) {
+          console.log("[PassportService] Simulating contract.registerInventoryProduct.staticCall...");
+          try {
+            const simId = await contract.registerInventoryProduct.staticCall(
+              params.productName,
+              params.brand,
+              params.category,
+              params.modelNumber,
+              params.serialNumber,
+              params.manufactureDate
+            );
+            console.log("[PassportService] staticCall succeeded! Simulated Passport ID:", simId.toString());
+          } catch (simErr: any) {
+            console.error("[PassportService] staticCall simulation failed:", simErr);
+            throw simErr;
+          }
+
+          console.log("[PassportService] Invoking contract.registerInventoryProduct transaction...");
+          return contract.registerInventoryProduct(
+            params.productName,
+            params.brand,
+            params.category,
+            params.modelNumber,
+            params.serialNumber,
+            params.manufactureDate
+          );
+        } else {
+          const initialOwner = (params.initialOwner || "").trim();
+          if (!initialOwner) {
+            throw new Error("Initial customer owner address is required when not keeping in inventory.");
+          }
+
+          console.log("[PassportService] Simulating contract.registerProduct.staticCall...");
+          try {
+            const simId = await contract.registerProduct.staticCall(
+              initialOwner,
+              params.productName,
+              params.brand,
+              params.category,
+              params.modelNumber,
+              params.serialNumber,
+              params.manufactureDate
+            );
+            console.log("[PassportService] staticCall succeeded! Simulated Passport ID:", simId.toString());
+          } catch (simErr: any) {
+            console.error("[PassportService] staticCall simulation failed:", simErr);
+            throw simErr;
+          }
+
+          console.log("[PassportService] Invoking contract.registerProduct transaction...");
+          return contract.registerProduct(
+            initialOwner,
+            params.productName,
+            params.brand,
+            params.category,
+            params.modelNumber,
+            params.serialNumber,
+            params.manufactureDate
+          );
+        }
+      },
       onStateChange
     );
 
@@ -298,6 +375,16 @@ export class PassportService {
     }
 
     return { passportId: mintedId, txHash: res.txHash, receipt: res.receipt };
+  }
+
+  /**
+   * Explicitly mints and registers a new Digital Product Passport into Manufacturer Inventory.
+   */
+  static async registerInventoryProduct(
+    params: Omit<RegisterProductParams, "initialOwner" | "keepInInventory">,
+    onStateChange?: StateChangeCallback
+  ): Promise<{ passportId?: bigint; txHash: string; receipt: ContractTransactionReceipt }> {
+    return this.registerProduct({ ...params, keepInInventory: true }, onStateChange);
   }
 
   /* ================================================================ */
