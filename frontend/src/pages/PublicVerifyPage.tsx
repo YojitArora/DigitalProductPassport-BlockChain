@@ -15,6 +15,35 @@ import {
   LuPackageSearch,
 } from "react-icons/lu";
 
+/**
+ * Normalizes input string to extract numeric Passport ID.
+ * Prepares the search component for future alphanumeric formats while supporting:
+ * - Direct integers: "1", "25"
+ * - Prefixed integers: "#1", "#25"
+ * - DPP prefixed IDs: "DPP-1", "dpp-25"
+ */
+function parsePassportId(raw: string): bigint | null {
+  if (!raw) return null;
+  let cleaned = raw.trim();
+
+  if (cleaned.startsWith("#")) {
+    cleaned = cleaned.substring(1).trim();
+  } else if (cleaned.toUpperCase().startsWith("DPP-")) {
+    cleaned = cleaned.substring(4).trim();
+  }
+
+  if (!cleaned || !/^\d+$/.test(cleaned)) {
+    return null;
+  }
+
+  try {
+    const val = BigInt(cleaned);
+    return val > 0n ? val : null;
+  } catch {
+    return null;
+  }
+}
+
 export const PublicVerifyPage: React.FC = () => {
   const { passportId } = useParams<{ passportId?: string }>();
   const navigate = useNavigate();
@@ -26,8 +55,8 @@ export const PublicVerifyPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPassport = useCallback(async (idStr: string) => {
-    const trimmed = idStr.trim();
-    if (!trimmed || isNaN(Number(trimmed)) || Number(trimmed) <= 0) {
+    const parsedId = parsePassportId(idStr);
+    if (!parsedId) {
       setError("Please enter a valid numeric Passport ID (e.g. 1, 2, 3...).");
       setProduct(null);
       setVerifiedAt(null);
@@ -38,7 +67,7 @@ export const PublicVerifyPage: React.FC = () => {
     setError(null);
 
     try {
-      const p = await PassportService.getProduct(BigInt(trimmed));
+      const p = await PassportService.getProduct(parsedId);
       setProduct(p);
       setVerifiedAt(
         new Date().toLocaleTimeString(undefined, {
@@ -50,7 +79,7 @@ export const PublicVerifyPage: React.FC = () => {
     } catch (err: any) {
       setProduct(null);
       setVerifiedAt(null);
-      setError(err.message || `No Digital Product Passport found for ID #${trimmed}.`);
+      setError(err.message || `No Digital Product Passport found for ID #${parsedId.toString()}.`);
     } finally {
       setLoading(false);
     }
@@ -73,16 +102,26 @@ export const PublicVerifyPage: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = searchId.trim();
-    if (trimmed) {
-      if (passportId === trimmed) {
-        fetchPassport(trimmed);
-      } else {
-        navigate(`/verify/${trimmed}`);
-      }
-    } else {
+    if (!trimmed) {
       setError("Please enter a numeric Passport ID to verify.");
       setProduct(null);
       setVerifiedAt(null);
+      return;
+    }
+
+    const parsed = parsePassportId(trimmed);
+    if (!parsed) {
+      setError("Please enter a valid numeric Passport ID (e.g. 1, 2, 3...).");
+      setProduct(null);
+      setVerifiedAt(null);
+      return;
+    }
+
+    const idString = parsed.toString();
+    if (passportId === idString) {
+      fetchPassport(idString);
+    } else {
+      navigate(`/verify/${idString}`);
     }
   };
 

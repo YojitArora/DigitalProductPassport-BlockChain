@@ -27,19 +27,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const [isQRModalOpen, setIsQRModalOpen] = useState<boolean>(false);
   const [copiedOwner, setCopiedOwner] = useState<boolean>(false);
+  const [copiedMfg, setCopiedMfg] = useState<boolean>(false);
 
   const passportIdStr = product.passportId.toString();
   const manufactureDate = new Date(Number(product.manufactureDate) * 1000).toLocaleDateString();
   const createdDate = new Date(Number(product.createdAt) * 1000).toLocaleDateString();
 
   const truncate = (addr: string) =>
-    `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+    addr ? `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}` : "None";
 
   const handleCopyOwner = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(product.currentOwner);
     setCopiedOwner(true);
     setTimeout(() => setCopiedOwner(false), 2000);
+  };
+
+  const handleCopyMfg = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(product.manufacturer);
+    setCopiedMfg(true);
+    setTimeout(() => setCopiedMfg(false), 2000);
   };
 
   return (
@@ -145,35 +153,65 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
+            flexDirection: "column",
             gap: "0.5rem",
+            background: "var(--bg-card, #1f2937)",
+            padding: "0.85rem 1rem",
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--border-subtle)",
             fontSize: "0.825rem",
-            padding: "0.25rem 0",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ color: "var(--text-secondary)" }}>Current Owner:</span>
-            <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 500 }}>
-              {truncate(product.currentOwner)}
-            </span>
-            <button
-              onClick={handleCopyOwner}
-              title="Copy Owner Address"
-              style={{
-                color: copiedOwner ? "var(--status-success)" : "var(--text-muted)",
-                fontSize: "0.9rem",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
-              {copiedOwner ? <LuCheck /> : <LuCopy />}
-            </button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <span style={{ color: "var(--text-secondary)" }}>Manufacturer:</span>
+              <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 500 }}>
+                {truncate(product.manufacturer)}
+              </span>
+              <button
+                onClick={handleCopyMfg}
+                title="Copy Manufacturer Address"
+                style={{
+                  color: copiedMfg ? "var(--status-success)" : "var(--text-muted)",
+                  fontSize: "0.9rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {copiedMfg ? <LuCheck /> : <LuCopy />}
+              </button>
+            </div>
+
+            <div style={{ color: "var(--text-muted)", fontSize: "0.775rem" }}>
+              Registered: {createdDate}
+            </div>
           </div>
 
-          <div style={{ color: "var(--text-muted)", fontSize: "0.775rem" }}>
-            Registered: {createdDate}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <span style={{ color: "var(--text-secondary)" }}>Current Owner:</span>
+              <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 500 }}>
+                {truncate(product.currentOwner)}
+              </span>
+              <button
+                onClick={handleCopyOwner}
+                title="Copy Owner Address"
+                style={{
+                  color: copiedOwner ? "var(--status-success)" : "var(--text-muted)",
+                  fontSize: "0.9rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {copiedOwner ? <LuCheck /> : <LuCopy />}
+              </button>
+            </div>
           </div>
         </div>
 
