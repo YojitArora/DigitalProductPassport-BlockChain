@@ -71,6 +71,8 @@ export interface RepairRecord {
  */
 export interface Product {
   passportId: bigint;
+  dppId?: string;
+  manufacturerName?: string;
   manufacturer: string;
   currentOwner: string;
   status: ProductStatus;

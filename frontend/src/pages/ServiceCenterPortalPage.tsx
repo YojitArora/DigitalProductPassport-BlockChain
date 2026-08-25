@@ -267,7 +267,8 @@ export const ServiceCenterPortalPage: React.FC = () => {
                 {activeServiceJobs.map((p) => (
                   <tr key={p.passportId.toString()} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
                     <td style={{ padding: "0.75rem 0.5rem", fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--accent-primary)" }}>
-                      #{p.passportId.toString()}
+                      <div>{p.dppId || `#${p.passportId.toString()}`}</div>
+                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 400 }}>Passport #{p.passportId.toString()}</div>
                     </td>
                     <td style={{ padding: "0.75rem 0.5rem", fontWeight: 600, color: "var(--text-primary)" }}>
                       {p.productName}
@@ -303,7 +304,7 @@ export const ServiceCenterPortalPage: React.FC = () => {
                         Complete
                       </button>
                       <Link
-                        to={`/verify/${p.passportId.toString()}`}
+                        to={`/verify/${p.dppId || p.passportId.toString()}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -364,7 +365,8 @@ export const ServiceCenterPortalPage: React.FC = () => {
                 {completedServiceJobs.map((p) => (
                   <tr key={p.passportId.toString()} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
                     <td style={{ padding: "0.75rem 0.5rem", fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--accent-primary)" }}>
-                      #{p.passportId.toString()}
+                      <div>{p.dppId || `#${p.passportId.toString()}`}</div>
+                      <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 400 }}>Passport #{p.passportId.toString()}</div>
                     </td>
                     <td style={{ padding: "0.75rem 0.5rem", fontWeight: 600, color: "var(--text-primary)" }}>
                       {p.productName}
@@ -380,7 +382,7 @@ export const ServiceCenterPortalPage: React.FC = () => {
                     </td>
                     <td style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>
                       <Link
-                        to={`/verify/${p.passportId.toString()}`}
+                        to={`/verify/${p.dppId || p.passportId.toString()}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{

@@ -18,35 +18,6 @@ import {
   LuPackageSearch,
 } from "react-icons/lu";
 
-/**
- * Normalizes input string to extract numeric Passport ID.
- * Prepares the search component for future alphanumeric formats while supporting:
- * - Direct integers: "1", "25"
- * - Prefixed integers: "#1", "#25"
- * - DPP prefixed IDs: "DPP-1", "dpp-25"
- */
-function parsePassportId(raw: string): bigint | null {
-  if (!raw) return null;
-  let cleaned = raw.trim();
-
-  if (cleaned.startsWith("#")) {
-    cleaned = cleaned.substring(1).trim();
-  } else if (cleaned.toUpperCase().startsWith("DPP-")) {
-    cleaned = cleaned.substring(4).trim();
-  }
-
-  if (!cleaned || !/^\d+$/.test(cleaned)) {
-    return null;
-  }
-
-  try {
-    const val = BigInt(cleaned);
-    return val > 0n ? val : null;
-  } catch {
-    return null;
-  }
-}
-
 export const PublicVerifyPage: React.FC = () => {
   const { passportId } = useParams<{ passportId?: string }>();
   const navigate = useNavigate();
@@ -59,23 +30,21 @@ export const PublicVerifyPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPassport = useCallback(async (idStr: string) => {
-    const parsedId = parsePassportId(idStr);
-    if (!parsedId) {
-      setError("Please enter a valid numeric Passport ID (e.g. 1, 2, 3...).");
+    if (!idStr || !idStr.trim()) {
+      setError("Please enter a valid Professional DPP ID (e.g. DPP-AURA-000001) or Passport ID.");
       setProduct(null);
       setLedgerEvents([]);
       setVerifiedAt(null);
       return;
     }
 
+    const trimmed = idStr.trim();
     setLoading(true);
     setError(null);
 
     try {
-      const [p, ledger] = await Promise.all([
-        PassportService.getProduct(parsedId),
-        HistoryService.getProductHistoryLedger(parsedId).catch(() => ({ events: [] as LedgerEvent[] })),
-      ]);
+      const p = await PassportService.resolveProduct(trimmed);
+      const ledger = await HistoryService.getProductHistoryLedger(p.passportId).catch(() => ({ events: [] as LedgerEvent[] }));
       setProduct(p);
       setLedgerEvents(ledger.events);
       setVerifiedAt(formatDateTime(new Date()));
@@ -83,7 +52,7 @@ export const PublicVerifyPage: React.FC = () => {
       setProduct(null);
       setLedgerEvents([]);
       setVerifiedAt(null);
-      setError(err.message || `No Digital Product Passport found for ID #${parsedId.toString()}.`);
+      setError(err.message || `No Digital Product Passport found for identifier "${trimmed}".`);
     } finally {
       setLoading(false);
     }
@@ -91,9 +60,9 @@ export const PublicVerifyPage: React.FC = () => {
 
   useEffect(() => {
     if (passportId && passportId.trim()) {
-      const trimmed = passportId.trim();
-      setSearchId(trimmed);
-      fetchPassport(trimmed);
+      const decoded = decodeURIComponent(passportId.trim());
+      setSearchId(decoded);
+      fetchPassport(decoded);
     } else {
       setSearchId("");
       setProduct(null);
@@ -108,25 +77,16 @@ export const PublicVerifyPage: React.FC = () => {
     e.preventDefault();
     const trimmed = searchId.trim();
     if (!trimmed) {
-      setError("Please enter a numeric Passport ID to verify.");
+      setError("Please enter a Professional DPP ID (e.g. DPP-AURA-000001) or numeric ID.");
       setProduct(null);
       setVerifiedAt(null);
       return;
     }
 
-    const parsed = parsePassportId(trimmed);
-    if (!parsed) {
-      setError("Please enter a valid numeric Passport ID (e.g. 1, 2, 3...).");
-      setProduct(null);
-      setVerifiedAt(null);
-      return;
-    }
-
-    const idString = parsed.toString();
-    if (passportId === idString) {
-      fetchPassport(idString);
+    if (passportId?.toUpperCase() === trimmed.toUpperCase()) {
+      fetchPassport(trimmed);
     } else {
-      navigate(`/verify/${idString}`);
+      navigate(`/verify/${encodeURIComponent(trimmed)}`);
     }
   };
 
@@ -178,34 +138,28 @@ export const PublicVerifyPage: React.FC = () => {
             fontSize: "1rem",
             maxWidth: "600px",
             margin: "0 auto",
+            lineHeight: 1.5,
           }}
         >
-          Inspect immutable product authenticity, ownership provenance, real-time status, and verified repair records directly on-chain. No wallet required.
+          Verify the immutable on-chain authenticity, ownership history, warranty, and certified maintenance records of any registered physical asset.
         </p>
       </div>
 
-      {/* Passport ID Search Input Bar */}
+      {/* Search Bar Input Form */}
       <form
         onSubmit={handleSearch}
         style={{
           display: "flex",
+          alignItems: "center",
           gap: "0.75rem",
           background: "var(--bg-secondary, #111827)",
-          padding: "0.6rem",
+          border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))",
           borderRadius: "var(--radius-lg, 16px)",
-          border: "1px solid var(--border-subtle)",
+          padding: "0.5rem 0.5rem 0.5rem 1.25rem",
           boxShadow: "var(--shadow-md)",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            paddingLeft: "0.75rem",
-            color: "var(--text-muted)",
-            fontSize: "1.2rem",
-          }}
-        >
+        <div style={{ color: "var(--text-muted)", fontSize: "1.25rem", display: "flex", alignItems: "center" }}>
           <LuSearch />
         </div>
 
@@ -215,8 +169,8 @@ export const PublicVerifyPage: React.FC = () => {
           type="text"
           value={searchId}
           onChange={(e) => setSearchId(e.target.value)}
-          placeholder="Enter Passport ID (e.g. 1, 2, 3...)"
-          aria-label="Enter Passport ID"
+          placeholder="Enter DPP ID (e.g. DPP-AURA-000001) or Passport ID..."
+          aria-label="Enter DPP ID or Passport ID"
           autoComplete="off"
           style={{
             flex: 1,

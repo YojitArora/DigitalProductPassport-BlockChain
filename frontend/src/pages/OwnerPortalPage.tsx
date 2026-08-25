@@ -194,20 +194,36 @@ export const OwnerPortalPage: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontWeight: 700,
-                        fontSize: "0.85rem",
-                        color: "var(--status-warning)",
-                        background: "rgba(245, 158, 11, 0.15)",
-                        padding: "0.2rem 0.5rem",
-                        borderRadius: "var(--radius-sm)",
-                      }}
-                    >
-                      Passport #{product.passportId.toString()}
-                    </span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontWeight: 700,
+                          fontSize: "0.85rem",
+                          color: "var(--status-warning)",
+                          background: "rgba(245, 158, 11, 0.15)",
+                          border: "1px solid rgba(245, 158, 11, 0.3)",
+                          padding: "0.2rem 0.5rem",
+                          borderRadius: "var(--radius-sm)",
+                        }}
+                      >
+                        {product.dppId || `Passport #${product.passportId.toString()}`}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "0.75rem",
+                          color: "var(--text-muted)",
+                          background: "rgba(255, 255, 255, 0.04)",
+                          padding: "0.15rem 0.4rem",
+                          borderRadius: "var(--radius-sm)",
+                          border: "1px solid var(--border-subtle)",
+                        }}
+                      >
+                        #{product.passportId.toString()}
+                      </span>
+                    </div>
 
                     <WarrantyBadge warranty={product.warranty} />
                   </div>
@@ -338,20 +354,36 @@ export const OwnerPortalPage: React.FC = () => {
                 >
                   <div>
                     {/* Header: ID & Status Badges */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontWeight: 700,
-                          fontSize: "0.9rem",
-                          color: "var(--accent-primary)",
-                          background: "rgba(99, 102, 241, 0.12)",
-                          padding: "0.2rem 0.5rem",
-                          borderRadius: "var(--radius-sm)",
-                        }}
-                      >
-                        Passport #{product.passportId.toString()}
-                      </span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontWeight: 700,
+                            fontSize: "0.9rem",
+                            color: "var(--accent-primary)",
+                            background: "rgba(99, 102, 241, 0.12)",
+                            border: "1px solid rgba(99, 102, 241, 0.3)",
+                            padding: "0.2rem 0.55rem",
+                            borderRadius: "var(--radius-sm)",
+                          }}
+                        >
+                          {product.dppId || `Passport #${product.passportId.toString()}`}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: "0.75rem",
+                            color: "var(--text-muted)",
+                            background: "rgba(255, 255, 255, 0.04)",
+                            padding: "0.15rem 0.4rem",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--border-subtle)",
+                          }}
+                        >
+                          #{product.passportId.toString()}
+                        </span>
+                      </div>
 
                       <div style={{ display: "flex", gap: "0.35rem" }}>
                         <StatusBadge status={product.status} />
@@ -577,7 +609,7 @@ export const OwnerPortalPage: React.FC = () => {
 
                       {/* Public Verification Link */}
                       <Link
-                        to={`/verify/${product.passportId.toString()}`}
+                        to={`/verify/${product.dppId || product.passportId.toString()}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -693,6 +725,7 @@ export const OwnerPortalPage: React.FC = () => {
       {selectedQrProduct && (
         <QRCodeModal
           passportId={selectedQrProduct.passportId}
+          dppId={selectedQrProduct.dppId}
           productName={selectedQrProduct.productName}
           isOpen={Boolean(selectedQrProduct)}
           onClose={() => setSelectedQrProduct(null)}

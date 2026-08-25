@@ -592,7 +592,8 @@ export const ManufacturerPortalPage: React.FC = () => {
                   return (
                     <tr key={p.passportId.toString()} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
                       <td style={{ padding: "0.75rem 0.5rem", fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--accent-primary)" }}>
-                        #{p.passportId.toString()}
+                        <div>{p.dppId || `#${p.passportId.toString()}`}</div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 400 }}>Passport #{p.passportId.toString()}</div>
                       </td>
                       <td style={{ padding: "0.75rem 0.5rem", fontWeight: 600, color: "var(--text-primary)" }}>
                         {p.productName}
@@ -688,7 +689,7 @@ export const ManufacturerPortalPage: React.FC = () => {
                           )}
 
                           <Link
-                            to={`/verify/${p.passportId.toString()}`}
+                            to={`/verify/${p.dppId || p.passportId.toString()}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -760,7 +761,7 @@ export const ManufacturerPortalPage: React.FC = () => {
             </div>
 
             <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.4 }}>
-              Transferring inventory product <strong>{transferModalProduct.productName}</strong> (Passport #{transferModalProduct.passportId.toString()}) to first customer. The recipient must accept this transfer in their Owner Portal.
+              Transferring inventory product <strong>{transferModalProduct.productName}</strong> ({transferModalProduct.dppId || `Passport #${transferModalProduct.passportId.toString()}`}) to first customer. The recipient must accept this transfer in their Owner Portal.
             </p>
 
             <label htmlFor="mfg-transfer-recipient" style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "0.2rem", display: "block" }}>

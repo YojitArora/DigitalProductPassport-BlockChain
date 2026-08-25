@@ -72,19 +72,35 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Header: Title & Badges */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
               <span
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: "0.8rem",
+                  fontSize: "0.85rem",
                   color: "var(--accent-secondary, #06b6d4)",
-                  background: "rgba(6, 182, 212, 0.1)",
-                  padding: "0.2rem 0.5rem",
+                  background: "rgba(6, 182, 212, 0.12)",
+                  border: "1px solid rgba(6, 182, 212, 0.3)",
+                  padding: "0.25rem 0.6rem",
                   borderRadius: "var(--radius-sm)",
-                  fontWeight: 600,
+                  fontWeight: 700,
+                  letterSpacing: "0.03em",
                 }}
               >
-                #{passportIdStr}
+                {product.dppId || `#${passportIdStr}`}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.75rem",
+                  color: "var(--text-muted)",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  padding: "0.2rem 0.45rem",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border-subtle)",
+                }}
+                title="Internal Blockchain Identifier"
+              >
+                Passport #{passportIdStr}
               </span>
               <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                 <StatusBadge status={product.status} isInventory={isInventory} />
@@ -285,7 +301,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </button>
 
             <Link
-              to={`/verify/${passportIdStr}`}
+              to={`/verify/${product.dppId || passportIdStr}`}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -303,6 +319,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       <QRCodeModal
         passportId={product.passportId}
+        dppId={product.dppId}
         productName={product.productName}
         isOpen={isQRModalOpen}
         onClose={() => setIsQRModalOpen(false)}

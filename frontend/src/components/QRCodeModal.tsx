@@ -4,6 +4,7 @@ import { LuQrCode, LuCopy, LuCheck, LuDownload, LuX, LuExternalLink } from "reac
 
 interface QRCodeModalProps {
   passportId: bigint | number;
+  dppId?: string;
   productName: string;
   isOpen: boolean;
   onClose: () => void;
@@ -11,6 +12,7 @@ interface QRCodeModalProps {
 
 export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   passportId,
+  dppId,
   productName,
   isOpen,
   onClose,
@@ -31,7 +33,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   if (!isOpen) return null;
 
   const idStr = passportId.toString();
-  const verifyUrl = `${window.location.origin}/verify/${idStr}`;
+  const displayId = dppId || idStr;
+  const verifyUrl = `${window.location.origin}/verify/${displayId}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(verifyUrl);
@@ -47,7 +50,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     const pngUrl = canvas.toDataURL("image/png");
     const downloadLink = document.createElement("a");
     downloadLink.href = pngUrl;
-    downloadLink.download = `passport-${idStr}-qrcode.png`;
+    downloadLink.download = `passport-${displayId}-qrcode.png`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
@@ -132,7 +135,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             marginBottom: "1.5rem",
           }}
         >
-          {productName} (Passport #{idStr})
+          {productName} ({displayId})
         </p>
 
         {/* QR Code Canvas */}

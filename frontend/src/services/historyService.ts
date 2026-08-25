@@ -51,6 +51,7 @@ export class HistoryService {
         const parsed = (log as any).args || contract.interface.parseLog({ topics: log.topics as string[], data: log.data })?.args;
         if (parsed) {
           const isInv = parsed.initialOwner.toLowerCase() === parsed.manufacturer.toLowerCase();
+          const dppLabel = product.dppId || `Passport #${pid.toString()}`;
           ledgerEvents.push({
             id: `evt-reg-${log.transactionHash}-${log.index}`,
             passportId: pid,
@@ -58,12 +59,13 @@ export class HistoryService {
             category: "Manufacturing",
             title: "Product Manufactured & Registered",
             subtitle: isInv ? "Minted directly into Manufacturer Inventory" : "Minted & assigned to initial customer owner",
-            description: `Digital Product Passport #${pid.toString()} minted on blockchain by authorized manufacturer. Serial number ${parsed.serialNumber}.`,
+            description: `Digital Product Passport (${dppLabel}) minted on blockchain by authorized manufacturer. Serial number ${parsed.serialNumber}.`,
             timestamp: BigInt(parsed.timestamp.toString()),
             actor: parsed.manufacturer,
             actorRole: "Manufacturer",
             newEntity: parsed.initialOwner,
             metadata: {
+              dppId: product.dppId,
               serialNumber: parsed.serialNumber,
               productName: parsed.productName,
               initialCustody: isInv ? "Manufacturer Inventory" : "Customer Ownership",

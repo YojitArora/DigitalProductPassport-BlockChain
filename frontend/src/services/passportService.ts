@@ -25,15 +25,30 @@ import {
   RegisterProductParams,
   TransactionState,
 } from "../types";
+import {
+  getCompanyCode,
+  formatDppId,
+  parseDppSearchQuery,
+} from "../utils/dppIdUtils";
 
 export type StateChangeCallback = (state: TransactionState) => void;
+
+// In-memory cache for manufacturer names
+const manufacturerNameCache = new Map<string, string>();
 
 /**
  * Internal helper to format raw Solidity contract Product struct into typed TypeScript Product object.
  */
-function mapContractProduct(raw: any): Product {
+function mapContractProduct(raw: any, mfgName?: string, seqNumber?: number | bigint): Product {
+  const pid = BigInt(raw.passportId.toString());
+  const companyCode = getCompanyCode(mfgName, raw.brand);
+  const seq = seqNumber !== undefined ? seqNumber : pid;
+  const dppId = formatDppId(companyCode, seq);
+
   return {
-    passportId: BigInt(raw.passportId.toString()),
+    passportId: pid,
+    dppId,
+    manufacturerName: mfgName,
     manufacturer: raw.manufacturer,
     currentOwner: raw.currentOwner,
     status: Number(raw.status) as ProductStatus,
@@ -398,10 +413,71 @@ export class PassportService {
     try {
       const contract = await getPassportContract();
       const raw = await contract.getProduct(passportId);
-      return mapContractProduct(raw);
+      const mfgAddr = (raw.manufacturer || "").toString().toLowerCase();
+      let mfgName = manufacturerNameCache.get(mfgAddr);
+      if (!mfgName && mfgAddr) {
+        try {
+          const mfg = await contract.getManufacturer(raw.manufacturer);
+          if (mfg && mfg.name) {
+            const resolved = mfg.name.toString();
+            mfgName = resolved;
+            manufacturerNameCache.set(mfgAddr, resolved);
+          }
+        } catch {}
+      }
+
+      // Calculate company sequence index:
+      // Count how many products this manufacturer has minted up to passportId
+      let seq = 1;
+      const currentPid = Number(raw.passportId);
+      for (let i = 1; i < currentPid; i++) {
+        try {
+          const prev = await contract.getProduct(i);
+          if (prev.manufacturer.toLowerCase() === mfgAddr) {
+            seq++;
+          }
+        } catch {}
+      }
+
+      return mapContractProduct(raw, mfgName, seq);
     } catch (err: any) {
       throw new Error(formatContractError(err));
     }
+  }
+
+  /**
+   * Retrieves a product passport matching a professional DPP ID (e.g. DPP-AURA-000001).
+   */
+  static async getProductByDppId(dppId: string): Promise<Product | null> {
+    if (!dppId) return null;
+    const target = dppId.trim().toUpperCase();
+    const all = await this.getAllProducts();
+    return all.find((p) => (p.dppId ? p.dppId.toUpperCase() === target : false)) || null;
+  }
+
+  /**
+   * Resolves a product passport by either numeric Passport ID (1, #1, DPP-1) or Professional DPP ID (DPP-AURA-000001).
+   */
+  static async resolveProduct(query: string | bigint | number): Promise<Product> {
+    const parsed = parseDppSearchQuery(query.toString());
+    if (parsed.isNumeric && parsed.numericId) {
+      return await this.getProduct(parsed.numericId);
+    }
+    if (parsed.dppIdString) {
+      const product = await this.getProductByDppId(parsed.dppIdString);
+      if (product) return product;
+    }
+    // Fallback search across all products by model, serial, or DPP ID
+    const all = await this.getAllProducts();
+    const match = all.find(
+      (p) =>
+        p.dppId?.toUpperCase() === query.toString().toUpperCase() ||
+        p.passportId.toString() === query.toString() ||
+        p.serialNumber.toLowerCase() === query.toString().toLowerCase()
+    );
+    if (match) return match;
+
+    throw new Error(`No Digital Product Passport found for identifier "${query.toString()}".`);
   }
 
   /**
