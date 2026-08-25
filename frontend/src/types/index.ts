@@ -158,6 +158,64 @@ export interface TimelineEvent {
 }
 
 /**
+ * Canonical product history ledger event categories.
+ */
+export type LedgerCategory =
+  | "Manufacturing"
+  | "Ownership"
+  | "Custody"
+  | "Service"
+  | "Warranty"
+  | "Security"
+  | "Certification";
+
+/**
+ * Supported enterprise ledger event types.
+ */
+export type LedgerEventType =
+  | "ProductMinted"
+  | "WarrantyActivated"
+  | "TransferRequested"
+  | "TransferAccepted"
+  | "TransferCancelled"
+  | "ServiceStarted"
+  | "RepairRecorded"
+  | "ServiceCompleted"
+  | "TheftReported"
+  | "AssetRecovered";
+
+/**
+ * Immutable Historical Ledger Event entry.
+ */
+export interface LedgerEvent {
+  id: string;
+  passportId: bigint;
+  type: LedgerEventType;
+  category: LedgerCategory;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  timestamp: bigint;
+  actor?: string;
+  actorRole?: string;
+  previousEntity?: string;
+  newEntity?: string;
+  metadata?: Record<string, any>;
+  transactionHash?: string;
+  blockNumber?: number;
+}
+
+/**
+ * Complete Product History Ledger container.
+ */
+export interface ProductHistoryLedger {
+  passportId: bigint;
+  events: LedgerEvent[];
+  totalEvents: number;
+  lastUpdated: bigint;
+}
+
+/**
  * Verified blockchain roles for an authenticated wallet identity.
  */
 export interface UserRoles {
@@ -176,3 +234,4 @@ export interface AuthSession {
   roles: UserRoles;
   authenticatedAt: number;
 }
+
