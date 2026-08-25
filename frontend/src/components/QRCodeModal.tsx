@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { LuQrCode, LuCopy, LuCheck, LuDownload, LuX, LuExternalLink } from "react-icons/lu";
 
@@ -17,6 +17,16 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

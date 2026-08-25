@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { TransactionState } from "../types";
 import {
   LuLoader,
@@ -13,12 +13,22 @@ interface TransactionModalProps {
 }
 
 export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClose }) => {
-  if (state.status === "idle") return null;
-
   const isPending =
     state.status === "preparing" ||
     state.status === "awaiting_wallet_confirmation" ||
     state.status === "pending_transaction";
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isPending && state.status !== "idle") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPending, state.status, onClose]);
+
+  if (state.status === "idle") return null;
 
   const isConfirmed = state.status === "confirmed";
   const isFailed = state.status === "failed";
