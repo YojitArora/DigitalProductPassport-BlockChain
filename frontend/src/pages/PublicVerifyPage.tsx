@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { PassportService } from "../services/passportService";
-import { Product } from "../types";
+import { HistoryService } from "../services/historyService";
+import { Product, LedgerEvent } from "../types";
 import ProductCard from "../components/ProductCard";
 import LifecycleTimeline from "../components/timeline/LifecycleTimeline";
+import PublicRepairHistory from "../components/repair/PublicRepairHistory";
 import EmptyState from "../components/EmptyState";
 import { formatDateTime } from "../utils/dateUtils";
 import {
@@ -51,6 +53,7 @@ export const PublicVerifyPage: React.FC = () => {
 
   const [searchId, setSearchId] = useState<string>(passportId ? passportId.trim() : "");
   const [product, setProduct] = useState<Product | null>(null);
+  const [ledgerEvents, setLedgerEvents] = useState<LedgerEvent[]>([]);
   const [verifiedAt, setVerifiedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +63,7 @@ export const PublicVerifyPage: React.FC = () => {
     if (!parsedId) {
       setError("Please enter a valid numeric Passport ID (e.g. 1, 2, 3...).");
       setProduct(null);
+      setLedgerEvents([]);
       setVerifiedAt(null);
       return;
     }
@@ -68,11 +72,16 @@ export const PublicVerifyPage: React.FC = () => {
     setError(null);
 
     try {
-      const p = await PassportService.getProduct(parsedId);
+      const [p, ledger] = await Promise.all([
+        PassportService.getProduct(parsedId),
+        HistoryService.getProductHistoryLedger(parsedId).catch(() => ({ events: [] as LedgerEvent[] })),
+      ]);
       setProduct(p);
+      setLedgerEvents(ledger.events);
       setVerifiedAt(formatDateTime(new Date()));
     } catch (err: any) {
       setProduct(null);
+      setLedgerEvents([]);
       setVerifiedAt(null);
       setError(err.message || `No Digital Product Passport found for ID #${parsedId.toString()}.`);
     } finally {
@@ -88,6 +97,7 @@ export const PublicVerifyPage: React.FC = () => {
     } else {
       setSearchId("");
       setProduct(null);
+      setLedgerEvents([]);
       setVerifiedAt(null);
       setError(null);
       setLoading(false);
@@ -324,11 +334,12 @@ export const PublicVerifyPage: React.FC = () => {
         />
       )}
 
-      {/* Product Passport Result Card & Lifecycle Timeline */}
+      {/* Product Passport Result Card, Lifecycle Timeline & Repair History */}
       {product && !loading && (
         <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
           <ProductCard product={product} showActions={true} />
-          <LifecycleTimeline product={product} />
+          <LifecycleTimeline product={product} events={ledgerEvents} />
+          <PublicRepairHistory events={ledgerEvents} productStatus={product.status} />
         </div>
       )}
 

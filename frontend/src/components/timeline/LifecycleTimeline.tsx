@@ -19,6 +19,7 @@ import {
 
 interface LifecycleTimelineProps {
   product: Product;
+  events?: LedgerEvent[];
 }
 
 const CATEGORY_COLORS: Record<LedgerCategory, { color: string; bg: string; border: string }> = {
@@ -59,15 +60,20 @@ const CATEGORY_COLORS: Record<LedgerCategory, { color: string; bg: string; borde
   },
 };
 
-export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product }) => {
-  const [events, setEvents] = useState<LedgerEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, events: propEvents }) => {
+  const [events, setEvents] = useState<LedgerEvent[]>(propEvents || []);
+  const [loading, setLoading] = useState<boolean>(!propEvents);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [activeModalEvent, setActiveModalEvent] = useState<LedgerEvent | null>(null);
   const [copiedTx, setCopiedTx] = useState<boolean>(false);
   const [copiedActor, setCopiedActor] = useState<boolean>(false);
 
   const loadLedger = useCallback(async () => {
+    if (propEvents) {
+      setEvents(propEvents);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const ledger = await HistoryService.getProductHistoryLedger(product.passportId);
@@ -77,7 +83,7 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product })
     } finally {
       setLoading(false);
     }
-  }, [product.passportId]);
+  }, [product.passportId, propEvents]);
 
   useEffect(() => {
     loadLedger();

@@ -178,23 +178,42 @@ export class HistoryService {
         }
       }
 
+      // Helper to resolve entity names
+      const scCache = new Map<string, string>();
+      const resolveServiceName = async (addr: string): Promise<string> => {
+        const key = addr.toLowerCase();
+        if (scCache.has(key)) return scCache.get(key)!;
+        try {
+          const sc = await contract.getServiceCenter(addr);
+          if (sc.name) {
+            scCache.set(key, sc.name);
+            return sc.name;
+          }
+        } catch {}
+        const fallback = `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+        scCache.set(key, fallback);
+        return fallback;
+      };
+
       // --- Map ServiceStarted ---
       for (const log of serviceStartLogs) {
         const parsed = (log as any).args || contract.interface.parseLog({ topics: log.topics as string[], data: log.data })?.args;
         if (parsed) {
+          const scName = await resolveServiceName(parsed.serviceCenter);
           ledgerEvents.push({
             id: `evt-srv-start-${log.transactionHash}-${log.index}`,
             passportId: pid,
             type: "ServiceStarted",
             category: "Service",
             title: "Certified Service Session Opened",
-            subtitle: `Intake by ${parsed.serviceCenter.substring(0, 6)}...${parsed.serviceCenter.substring(parsed.serviceCenter.length - 4)}`,
-            description: `Authorized service center accepted product for maintenance or certified inspection. Status changed to UnderService.`,
+            subtitle: `Intake by ${scName}`,
+            description: `Authorized service center (${scName}) accepted product for maintenance or certified inspection. Status changed to UnderService.`,
             timestamp: BigInt(parsed.timestamp.toString()),
             actor: parsed.serviceCenter,
             actorRole: "Service Center",
             metadata: {
               serviceCenter: parsed.serviceCenter,
+              serviceCenterName: scName,
             },
             transactionHash: log.transactionHash,
             blockNumber: log.blockNumber,
@@ -206,13 +225,14 @@ export class HistoryService {
       for (const log of repairLogs) {
         const parsed = (log as any).args || contract.interface.parseLog({ topics: log.topics as string[], data: log.data })?.args;
         if (parsed) {
+          const scName = await resolveServiceName(parsed.serviceCenter);
           ledgerEvents.push({
             id: `evt-repair-${log.transactionHash}-${log.index}`,
             passportId: pid,
             type: "RepairRecorded",
             category: "Service",
-            title: `Repair #${parsed.repairNumber.toString()} Logged`,
-            subtitle: `Certified maintenance record added`,
+            title: `Repair #${parsed.repairNumber.toString()}`,
+            subtitle: `Performed by ${scName}`,
             description: parsed.description,
             timestamp: BigInt(parsed.timestamp.toString()),
             actor: parsed.serviceCenter,
@@ -221,6 +241,7 @@ export class HistoryService {
               repairNumber: parsed.repairNumber.toString(),
               description: parsed.description,
               serviceCenter: parsed.serviceCenter,
+              serviceCenterName: scName,
             },
             transactionHash: log.transactionHash,
             blockNumber: log.blockNumber,
@@ -232,17 +253,22 @@ export class HistoryService {
       for (const log of serviceCompLogs) {
         const parsed = (log as any).args || contract.interface.parseLog({ topics: log.topics as string[], data: log.data })?.args;
         if (parsed) {
+          const scName = await resolveServiceName(parsed.serviceCenter);
           ledgerEvents.push({
             id: `evt-srv-comp-${log.transactionHash}-${log.index}`,
             passportId: pid,
             type: "ServiceCompleted",
             category: "Service",
             title: "Certified Service Session Completed",
-            subtitle: `Released back to active operational status`,
-            description: `Service center finalized the maintenance session and restored original operational status on-chain.`,
+            subtitle: `Finalized by ${scName}`,
+            description: `Service center (${scName}) finalized the maintenance session and restored original operational status on-chain.`,
             timestamp: BigInt(parsed.timestamp.toString()),
             actor: parsed.serviceCenter,
             actorRole: "Service Center",
+            metadata: {
+              serviceCenter: parsed.serviceCenter,
+              serviceCenterName: scName,
+            },
             transactionHash: log.transactionHash,
             blockNumber: log.blockNumber,
           });
