@@ -1,6 +1,7 @@
 import React from "react";
 import { PendingTransfer } from "../types";
 import { LuArrowRightLeft, LuClock, LuCheck } from "react-icons/lu";
+import { formatDateTime } from "../utils/dateUtils";
 
 interface TransferStatusProps {
   pendingTransfer: PendingTransfer;
@@ -33,7 +34,7 @@ export const TransferStatus: React.FC<TransferStatusProps> = ({
     );
   }
 
-  const requestedDate = new Date(Number(pendingTransfer.requestedAt) * 1000).toLocaleString();
+  const requestedDate = formatDateTime(pendingTransfer.requestedAt);
   const truncate = (addr: string) =>
     `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
 

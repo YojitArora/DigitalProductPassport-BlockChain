@@ -5,6 +5,7 @@ import { Product } from "../types";
 import ProductCard from "../components/ProductCard";
 import LifecycleTimeline from "../components/timeline/LifecycleTimeline";
 import EmptyState from "../components/EmptyState";
+import { formatDateTime } from "../utils/dateUtils";
 import {
   LuSearch,
   LuShieldCheck,
@@ -69,13 +70,7 @@ export const PublicVerifyPage: React.FC = () => {
     try {
       const p = await PassportService.getProduct(parsedId);
       setProduct(p);
-      setVerifiedAt(
-        new Date().toLocaleTimeString(undefined, {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        })
-      );
+      setVerifiedAt(formatDateTime(new Date()));
     } catch (err: any) {
       setProduct(null);
       setVerifiedAt(null);

@@ -1,5 +1,6 @@
 import React from "react";
 import { Product, ProductStatus } from "../../types";
+import { formatDate } from "../../utils/dateUtils";
 import {
   LuFactory,
   LuShieldCheck,
@@ -14,14 +15,6 @@ interface LifecycleTimelineProps {
 }
 
 export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product }) => {
-  const formatDate = (ts: bigint) => {
-    if (!ts || ts === 0n) return "N/A";
-    return new Date(Number(ts) * 1000).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const isWarrantyActivated = product.warranty.startTimestamp > 0n;
   const now = BigInt(Math.floor(Date.now() / 1000));

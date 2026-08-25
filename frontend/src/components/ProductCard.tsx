@@ -5,6 +5,7 @@ import WarrantyBadge from "./WarrantyBadge";
 import RepairSummary from "./RepairSummary";
 import TransferStatus from "./TransferStatus";
 import QRCodeModal from "./QRCodeModal";
+import { formatDate } from "../utils/dateUtils";
 import {
   LuQrCode,
   LuExternalLink,
@@ -30,8 +31,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [copiedMfg, setCopiedMfg] = useState<boolean>(false);
 
   const passportIdStr = product.passportId.toString();
-  const manufactureDate = new Date(Number(product.manufactureDate) * 1000).toLocaleDateString();
-  const createdDate = new Date(Number(product.createdAt) * 1000).toLocaleDateString();
+  const manufactureDate = formatDate(product.manufactureDate);
+  const createdDate = formatDate(product.createdAt);
 
   const truncate = (addr: string) =>
     addr ? `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}` : "None";

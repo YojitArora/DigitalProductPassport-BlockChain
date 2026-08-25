@@ -9,6 +9,7 @@ import QRCodeModal from "../components/QRCodeModal";
 import StatusBadge from "../components/StatusBadge";
 import WarrantyBadge from "../components/WarrantyBadge";
 import EmptyState from "../components/EmptyState";
+import { formatDate } from "../utils/dateUtils";
 import {
   LuUser,
   LuArrowLeft,
@@ -60,15 +61,6 @@ export const OwnerPortalPage: React.FC = () => {
 
   const truncate = (addr: string) =>
     addr ? `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}` : "None";
-
-  const formatDate = (ts: bigint) => {
-    if (!ts || ts === 0n) return "N/A";
-    return new Date(Number(ts) * 1000).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   return (
     <div

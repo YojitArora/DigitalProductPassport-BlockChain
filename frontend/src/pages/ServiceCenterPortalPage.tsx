@@ -5,6 +5,7 @@ import { PassportService } from "../services/passportService";
 import { Product, ProductStatus } from "../types";
 import TransactionModal from "../components/TransactionModal";
 import StatusBadge from "../components/StatusBadge";
+import { formatDate } from "../utils/dateUtils";
 import {
   LuWrench,
   LuArrowLeft,
@@ -52,15 +53,6 @@ export const ServiceCenterPortalPage: React.FC = () => {
   const completedServiceJobs = allProducts.filter(
     (p) => p.repairCount > 0n && p.status !== ProductStatus.UnderService
   );
-
-  const formatDate = (ts: bigint) => {
-    if (!ts || ts === 0n) return "N/A";
-    return new Date(Number(ts) * 1000).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   const truncate = (addr: string) =>
     addr ? `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}` : "None";

@@ -1,5 +1,6 @@
 import React from "react";
 import { LuWrench, LuHistory } from "react-icons/lu";
+import { formatDate } from "../utils/dateUtils";
 
 interface RepairSummaryProps {
   repairCount: bigint | number;
@@ -13,15 +14,7 @@ export const RepairSummary: React.FC<RepairSummaryProps> = ({
   isUnderService = false,
 }) => {
   const count = Number(repairCount);
-  const lastTimestamp = Number(lastRepairTimestamp);
-  const formattedDate =
-    lastTimestamp > 0
-      ? new Date(lastTimestamp * 1000).toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "No repairs logged";
+  const formattedDate = formatDate(lastRepairTimestamp, "No repairs logged");
 
   return (
     <div
