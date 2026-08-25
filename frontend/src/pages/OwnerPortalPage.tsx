@@ -23,6 +23,8 @@ import {
   LuLayers,
   LuX,
   LuPackageSearch,
+  LuInbox,
+  LuCheck,
 } from "react-icons/lu";
 
 export const OwnerPortalPage: React.FC = () => {
@@ -30,9 +32,10 @@ export const OwnerPortalPage: React.FC = () => {
   const { session, refreshRoles } = useAuth();
   const account = session?.account || "";
 
-  // Owned Products State
+  // Owned Products & Incoming Transfers State
   const [ownedProducts, setOwnedProducts] = useState<Product[]>([]);
-  const [loadingOwned, setLoadingOwned] = useState<boolean>(true);
+  const [incomingTransfers, setIncomingTransfers] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Transfer Input State for active modal/dialog
   const [transferModalProduct, setTransferModalProduct] = useState<Product | null>(null);
@@ -41,27 +44,40 @@ export const OwnerPortalPage: React.FC = () => {
   // QR Modal State
   const [selectedQrProduct, setSelectedQrProduct] = useState<Product | null>(null);
 
-  const fetchOwnedProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async () => {
     if (!account) return;
-    setLoadingOwned(true);
+    setLoading(true);
     try {
-      const list = await PassportService.getProductsByOwner(account);
-      // Unsold inventory is managed in the Manufacturer Portal and excluded from customer Owner Portal
-      const customerOwned = list.filter(
+      const [ownedList, incomingList] = await Promise.all([
+        PassportService.getProductsByOwner(account),
+        PassportService.getPendingIncomingTransfers(account),
+      ]);
+
+      // Unsold factory inventory is managed in the Manufacturer Portal and excluded from customer Owner Portal
+      const customerOwned = ownedList.filter(
         (p) => p.manufacturer.toLowerCase() !== account.toLowerCase()
       );
       setOwnedProducts(customerOwned);
+      setIncomingTransfers(incomingList);
       refreshRoles();
     } catch (err) {
-      console.warn("Failed to fetch owned products:", err);
+      console.warn("Failed to fetch owner products:", err);
     } finally {
-      setLoadingOwned(false);
+      setLoading(false);
     }
   }, [account, refreshRoles]);
 
   useEffect(() => {
-    fetchOwnedProducts();
-  }, [fetchOwnedProducts]);
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const handleAcceptTransfer = (passportId: bigint) => {
+    tx.execute(async (cb) => {
+      const res = await PassportService.acceptTransfer(passportId, cb);
+      await fetchProducts();
+      return res;
+    });
+  };
 
   const truncate = (addr: string) =>
     addr ? `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}` : "None";
@@ -123,8 +139,8 @@ export const OwnerPortalPage: React.FC = () => {
           </div>
 
           <button
-            onClick={fetchOwnedProducts}
-            disabled={loadingOwned}
+            onClick={fetchProducts}
+            disabled={loading}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -139,10 +155,131 @@ export const OwnerPortalPage: React.FC = () => {
               cursor: "pointer",
             }}
           >
-            <LuRefreshCw className={loadingOwned ? "animate-spin" : ""} /> Refresh Assets
+            <LuRefreshCw className={loading ? "animate-spin" : ""} /> Refresh Assets
           </button>
         </div>
       </div>
+
+      {/* Incoming Ownership Transfers Section */}
+      {incomingTransfers.length > 0 && (
+        <div
+          style={{
+            background: "rgba(245, 158, 11, 0.05)",
+            border: "1px solid rgba(245, 158, 11, 0.25)",
+            borderRadius: "var(--radius-lg, 16px)",
+            padding: "1.5rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
+            <LuInbox style={{ color: "var(--status-warning)", fontSize: "1.3rem" }} />
+            <h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              Incoming Ownership Transfers ({incomingTransfers.length})
+            </h2>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "1.25rem" }}>
+            {incomingTransfers.map((product) => (
+              <div
+                key={`incoming-${product.passportId.toString()}`}
+                style={{
+                  background: "var(--bg-secondary, #111827)",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  borderRadius: "var(--radius-md, 12px)",
+                  padding: "1.5rem",
+                  boxShadow: "var(--shadow-md)",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  gap: "1.25rem",
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontWeight: 700,
+                        fontSize: "0.85rem",
+                        color: "var(--status-warning)",
+                        background: "rgba(245, 158, 11, 0.15)",
+                        padding: "0.2rem 0.5rem",
+                        borderRadius: "var(--radius-sm)",
+                      }}
+                    >
+                      Passport #{product.passportId.toString()}
+                    </span>
+
+                    <WarrantyBadge warranty={product.warranty} />
+                  </div>
+
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.25rem" }}>
+                    {product.productName}
+                  </h3>
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "1rem" }}>
+                    {product.brand} · {product.category} · Model {product.modelNumber}
+                  </div>
+
+                  <div
+                    style={{
+                      background: "var(--bg-card)",
+                      padding: "0.85rem",
+                      borderRadius: "var(--radius-md)",
+                      border: "1px solid var(--border-subtle)",
+                      fontSize: "0.8rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.4rem",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "var(--text-muted)" }}>Manufacturer</span>
+                      <span style={{ fontWeight: 600, color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
+                        {truncate(product.manufacturer)}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "var(--text-muted)" }}>Pending From</span>
+                      <span style={{ fontWeight: 600, color: "var(--status-warning)", fontFamily: "var(--font-mono)" }}>
+                        {truncate(product.currentOwner)}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "var(--text-muted)" }}>Serial Number</span>
+                      <span style={{ fontWeight: 600, color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
+                        {product.serialNumber}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  id={`accept-transfer-btn-${product.passportId.toString()}`}
+                  name={`acceptTransfer-${product.passportId.toString()}`}
+                  onClick={() => handleAcceptTransfer(product.passportId)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.4rem",
+                    width: "100%",
+                    padding: "0.75rem",
+                    background: "var(--status-success, #10b981)",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "var(--radius-md)",
+                    fontSize: "0.9rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)",
+                  }}
+                >
+                  <LuCheck /> Accept Transfer
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Owned Products Section */}
       <div>
@@ -153,17 +290,31 @@ export const OwnerPortalPage: React.FC = () => {
           </h2>
         </div>
 
-        {loadingOwned ? (
+        {loading ? (
           <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-secondary)" }}>
             <LuLoader style={{ animation: "spin 1.5s linear infinite", fontSize: "2rem", marginBottom: "0.75rem" }} />
             <div>Loading verified product passports from blockchain...</div>
           </div>
-        ) : ownedProducts.length === 0 ? (
+        ) : ownedProducts.length === 0 && incomingTransfers.length === 0 ? (
           <EmptyState
             icon={<LuPackageSearch />}
             title="No Product Passports Owned"
             description={`Wallet ${truncate(account)} does not currently hold ownership of any product passports on the blockchain.`}
           />
+        ) : ownedProducts.length === 0 ? (
+          <div
+            style={{
+              padding: "2rem",
+              background: "var(--bg-card)",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border-subtle)",
+              color: "var(--text-secondary)",
+              textAlign: "center",
+              fontSize: "0.9rem",
+            }}
+          >
+            You currently hold no accepted products. Review your incoming transfers above.
+          </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "1.5rem" }}>
             {ownedProducts.map((product) => {
@@ -279,7 +430,7 @@ export const OwnerPortalPage: React.FC = () => {
                           onClick={() =>
                             tx.execute(async (cb) => {
                               const res = await PassportService.cancelTransfer(product.passportId, cb);
-                              fetchOwnedProducts();
+                              fetchProducts();
                               return res;
                             })
                           }
@@ -352,7 +503,7 @@ export const OwnerPortalPage: React.FC = () => {
                           onClick={() =>
                             tx.execute(async (cb) => {
                               const res = await PassportService.reportStolen(product.passportId, cb);
-                              fetchOwnedProducts();
+                              fetchProducts();
                               return res;
                             })
                           }
@@ -378,7 +529,7 @@ export const OwnerPortalPage: React.FC = () => {
                           onClick={() =>
                             tx.execute(async (cb) => {
                               const res = await PassportService.reportRecovered(product.passportId, cb);
-                              fetchOwnedProducts();
+                              fetchProducts();
                               return res;
                             })
                           }
@@ -524,7 +675,7 @@ export const OwnerPortalPage: React.FC = () => {
                   setTransferModalProduct(null);
                   tx.execute(async (cb) => {
                     const res = await PassportService.initiateTransfer(pid, rec, cb);
-                    fetchOwnedProducts();
+                    fetchProducts();
                     return res;
                   });
                 }}

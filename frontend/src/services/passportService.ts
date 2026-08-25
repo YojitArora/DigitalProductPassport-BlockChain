@@ -475,16 +475,32 @@ export class PassportService {
   }
 
   /**
-   * Checks whether a wallet currently holds on-chain customer ownership of at least one product.
+   * Queries all product passports where a pending ownership transfer is targeted to a specific wallet.
+   */
+  static async getPendingIncomingTransfers(account: string): Promise<Product[]> {
+    if (!account) return [];
+    const all = await this.getAllProducts();
+    return all.filter(
+      (p) =>
+        p.pendingTransfer.exists &&
+        p.pendingTransfer.to.toLowerCase() === account.toLowerCase()
+    );
+  }
+
+  /**
+   * Checks whether a wallet currently holds on-chain customer ownership or has incoming transfers pending.
    * Unsold factory inventory is managed in the Manufacturer Portal and excluded from customer ownership.
    */
   static async hasOwnedProducts(account: string): Promise<boolean> {
     if (!account) return false;
-    const owned = await this.getProductsByOwner(account);
+    const [owned, incoming] = await Promise.all([
+      this.getProductsByOwner(account),
+      this.getPendingIncomingTransfers(account),
+    ]);
     const customerOwned = owned.filter(
       (p) => p.manufacturer.toLowerCase() !== account.toLowerCase()
     );
-    return customerOwned.length > 0;
+    return customerOwned.length > 0 || incoming.length > 0;
   }
 
   /* ================================================================ */
