@@ -1,7 +1,6 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LuShieldCheck,
   LuWallet,
   LuLogOut,
   LuSearch,
@@ -66,38 +65,32 @@ export const Navbar: React.FC = () => {
           gap: "1rem",
         }}
       >
-        {/* Brand Logo */}
+        {/* Brand Logo Lockup */}
         <Link
           to="/"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.65rem",
+            gap: "0.75rem",
             textDecoration: "none",
             color: "var(--text-primary)",
           }}
         >
-          <div
+          <img
+            src="/traceledger-emblem.png"
+            alt="TraceLedger Logo"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "34px",
-              height: "34px",
-              borderRadius: "var(--radius-sm)",
-              background: "#16202c",
-              border: "1px solid rgba(113, 135, 168, 0.3)",
-              color: "var(--accent-primary)",
-              fontSize: "18px",
+              height: "32px",
+              width: "auto",
+              objectFit: "contain",
+              display: "block",
             }}
-          >
-            <LuShieldCheck />
-          </div>
+          />
           <div>
-            <div style={{ fontWeight: 700, fontSize: "1.05rem", letterSpacing: "-0.01em", lineHeight: 1.1 }}>
-              ProductPassport
+            <div style={{ fontWeight: 800, fontSize: "1.15rem", letterSpacing: "-0.02em", lineHeight: 1.1, color: "#ffffff" }}>
+              TraceLedger
             </div>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>
+            <div style={{ fontSize: "0.68rem", color: "var(--accent-primary)", fontWeight: 500, letterSpacing: "0.02em" }}>
               Enterprise Web3 Infrastructure
             </div>
           </div>

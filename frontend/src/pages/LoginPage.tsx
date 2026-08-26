@@ -3,7 +3,6 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useWallet } from "../hooks/useWallet";
 import {
-  LuShieldCheck,
   LuWallet,
   LuKey,
   LuCheck,
@@ -39,8 +38,8 @@ export const LoginPage: React.FC = () => {
   return (
     <div
       style={{
-        maxWidth: "540px",
-        margin: "3rem auto",
+        maxWidth: "520px",
+        margin: "3.5rem auto",
         padding: "0 1.5rem",
         display: "flex",
         flexDirection: "column",
@@ -54,67 +53,69 @@ export const LoginPage: React.FC = () => {
             display: "flex",
             alignItems: "center",
             gap: "0.75rem",
-            padding: "1rem 1.25rem",
-            background: "rgba(245, 158, 11, 0.12)",
-            border: "1px solid rgba(245, 158, 11, 0.3)",
+            padding: "0.85rem 1.15rem",
+            background: "var(--status-warning-tint)",
+            border: "1px solid rgba(245, 158, 11, 0.25)",
             borderRadius: "var(--radius-md)",
-            color: "var(--status-warning, #f59e0b)",
-            fontSize: "0.9rem",
+            color: "var(--status-warning)",
+            fontSize: "0.875rem",
           }}
         >
-          <LuLock style={{ fontSize: "1.25rem", flexShrink: 0 }} />
+          <LuLock style={{ fontSize: "1.15rem", flexShrink: 0 }} />
           <div>{flashMessage}</div>
         </div>
       )}
 
       {/* Main Authentication Card */}
       <div
+        className="card-base"
         style={{
-          background: "var(--bg-secondary, #111827)",
-          border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
-          borderRadius: "var(--radius-lg, 16px)",
+          background: "var(--bg-secondary)",
+          border: "1px solid var(--border-default)",
           padding: "2.5rem 2rem",
-          boxShadow: "var(--shadow-lg)",
           display: "flex",
           flexDirection: "column",
           gap: "1.75rem",
           textAlign: "center",
         }}
       >
-        {/* Shield Icon Header */}
+        {/* TraceLedger Brand Header */}
         <div>
           <div
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "60px",
-              height: "60px",
-              borderRadius: "16px",
-              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%)",
-              border: "1px solid rgba(99, 102, 241, 0.3)",
-              color: "var(--accent-primary, #6366f1)",
-              fontSize: "30px",
-              marginBottom: "1rem",
+              marginBottom: "1.25rem",
             }}
           >
-            <LuShieldCheck />
+            <img
+              src="/traceledger-emblem.png"
+              alt="TraceLedger"
+              style={{
+                height: "52px",
+                width: "auto",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
           </div>
 
           <h2
+            className="text-card-title"
             style={{
               fontSize: "1.65rem",
               fontWeight: 800,
-              color: "var(--text-primary, #f9fafb)",
+              color: "#ffffff",
               letterSpacing: "-0.02em",
-              marginBottom: "0.4rem",
+              marginBottom: "0.35rem",
             }}
           >
-            Enterprise Access Portal
+            TraceLedger Enterprise Access
           </h2>
 
-          <p style={{ color: "var(--text-secondary, #9ca3af)", fontSize: "0.9rem", lineHeight: 1.4 }}>
-            Authenticate using your Web3 wallet signature to access your authorized blockchain portals.
+          <p className="text-secondary" style={{ fontSize: "0.875rem", lineHeight: 1.5 }}>
+            Authenticate using your Web3 cryptographic wallet signature to access your authorized role portals.
           </p>
         </div>
 
@@ -123,9 +124,9 @@ export const LoginPage: React.FC = () => {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "0.6rem",
+            gap: "0.65rem",
             textAlign: "left",
-            background: "var(--bg-card, #1f2937)",
+            background: "var(--bg-card)",
             padding: "1rem 1.25rem",
             borderRadius: "var(--radius-md)",
             border: "1px solid var(--border-subtle)",
@@ -149,15 +150,14 @@ export const LoginPage: React.FC = () => {
         {/* Error Feedback */}
         {authError && (
           <div
+            className="card-danger"
             style={{
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
               padding: "0.75rem 1rem",
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
               borderRadius: "var(--radius-sm)",
-              color: "var(--status-danger, #ef4444)",
+              color: "var(--status-danger)",
               fontSize: "0.85rem",
               textAlign: "left",
             }}
@@ -173,18 +173,10 @@ export const LoginPage: React.FC = () => {
             href="https://metamask.io/download/"
             target="_blank"
             rel="noopener noreferrer"
+            className="btn btn-primary"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
               padding: "0.85rem 1.5rem",
-              background: "var(--accent-primary)",
-              color: "#ffffff",
-              borderRadius: "var(--radius-md)",
               fontSize: "0.95rem",
-              fontWeight: 600,
-              textDecoration: "none",
             }}
           >
             <LuWallet /> Install MetaMask
@@ -193,19 +185,10 @@ export const LoginPage: React.FC = () => {
           <button
             onClick={handleAuthenticate}
             disabled={isAuthenticating}
+            className="btn btn-primary"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
               padding: "0.85rem 1.5rem",
-              background: "var(--accent-primary)",
-              color: "#ffffff",
-              borderRadius: "var(--radius-md)",
-              fontSize: "1rem",
-              fontWeight: 600,
-              cursor: isAuthenticating ? "not-allowed" : "pointer",
-              opacity: isAuthenticating ? 0.7 : 1,
+              fontSize: "0.95rem",
             }}
           >
             {isAuthenticating ? (
