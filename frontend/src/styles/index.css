@@ -1,38 +1,100 @@
 :root {
+  /* ==========================================================================
+     1. TYPOGRAPHY TOKENS
+     ========================================================================== */
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Color Palette - Modern Dark/Clean Theme */
-  --bg-primary: #0a0e17;
-  --bg-secondary: #111827;
-  --bg-card: #1f2937;
-  --bg-card-hover: #374151;
+  /* ==========================================================================
+     2. BACKGROUND & SURFACE TOKENS
+     ========================================================================== */
+  --bg-primary: #0a0e17;              /* Deep slate page background */
+  --bg-secondary: #111827;            /* Default surface / panel container */
+  --bg-card: #1f2937;                 /* Elevated card / input surface */
+  --bg-card-hover: #374151;           /* Elevated surface hover */
+  --bg-surface-glass: rgba(17, 24, 39, 0.75); /* Glassmorphism translucent layer */
+  --bg-overlay: rgba(0, 0, 0, 0.75);  /* Modal & backdrop overlay */
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(99, 102, 241, 0.4);
+  /* ==========================================================================
+     3. BORDER & DIVIDER TOKENS
+     ========================================================================== */
+  --border-subtle: rgba(255, 255, 255, 0.08); /* Default quiet border */
+  --border-default: rgba(255, 255, 255, 0.15); /* Visible container divider */
+  --border-interactive: rgba(255, 255, 255, 0.25); /* Hoverable interactive border */
+  --border-active: rgba(99, 102, 241, 0.4);   /* Focused / active indigo border */
+  --border-focus: #6366f1;                    /* Form focus ring */
+  --border-verified: rgba(6, 182, 212, 0.4);  /* Verified Web3 identity border */
+  --border-danger: rgba(239, 68, 68, 0.4);    /* Stolen / critical error border */
 
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  /* ==========================================================================
+     4. TYPOGRAPHY COLOR TOKENS
+     ========================================================================== */
+  --text-primary: #f9fafb;            /* High-contrast headings & primary values */
+  --text-secondary: #9ca3af;          /* Descriptive body & subtitle copy */
+  --text-muted: #6b7280;              /* Labels, timestamps, & captions */
+  --text-disabled: #4b5563;           /* Inactive elements */
+  --text-inverse: #0a0e17;            /* Dark text on bright badge fills */
 
-  --accent-primary: #6366f1;
-  --accent-primary-hover: #4f46e5;
-  --accent-secondary: #06b6d4;
+  /* ==========================================================================
+     5. ACCENT & BRAND TOKENS
+     ========================================================================== */
+  --accent-primary: #6366f1;          /* Electric Indigo - Primary actions */
+  --accent-primary-hover: #4f46e5;    /* Indigo hover */
+  --accent-primary-tint: rgba(99, 102, 241, 0.12); /* Indigo badge / pill background */
+  --accent-secondary: #06b6d4;        /* Cyan - DPP identity & on-chain trust */
+  --accent-secondary-hover: #0891b2;  /* Cyan hover */
+  --accent-secondary-tint: rgba(6, 182, 212, 0.12); /* Cyan badge background */
 
-  --status-success: #10b981;
-  --status-warning: #f59e0b;
-  --status-danger: #ef4444;
-  --status-info: #3b82f6;
+  /* ==========================================================================
+     6. LIFECYCLE & STATUS TOKENS
+     ========================================================================== */
+  --status-success: #10b981;          /* Emerald - Active / Valid warranty / Recovered */
+  --status-success-tint: rgba(16, 185, 129, 0.12);
+  --status-warning: #f59e0b;          /* Amber - Under service / Expiring warranty */
+  --status-warning-tint: rgba(245, 158, 11, 0.12);
+  --status-danger: #ef4444;           /* Coral Red - Reported stolen / Revoked / Failed */
+  --status-danger-tint: rgba(239, 68, 68, 0.15);
+  --status-info: #3b82f6;             /* Royal Blue - Ownership transfer / Notice */
+  --status-info-tint: rgba(59, 130, 246, 0.12);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  /* ==========================================================================
+     7. CORNER RADIUS TOKENS
+     ========================================================================== */
+  --radius-sm: 6px;                   /* Small badges, pills, & compact buttons */
+  --radius-md: 10px;                  /* Standard buttons & inputs */
+  --radius-lg: 16px;                  /* Cards, panels, & modals */
+  --radius-xl: 24px;                  /* Hero containers & large cards */
+  --radius-full: 9999px;              /* Circular nodes & pill badges */
 
+  /* ==========================================================================
+     8. SHADOW & DEPTH TOKENS
+     ========================================================================== */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.25);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+  /* ==========================================================================
+     9. WEB3 GLOW TOKENS
+     ========================================================================== */
+  --glow-indigo: 0 0 16px rgba(99, 102, 241, 0.45);
+  --glow-cyan: 0 0 16px rgba(6, 182, 212, 0.45);
+  --glow-green: 0 0 16px rgba(16, 185, 129, 0.45);
+  --glow-amber: 0 0 16px rgba(245, 158, 11, 0.45);
+  --glow-red: 0 0 16px rgba(239, 68, 68, 0.45);
+
+  /* ==========================================================================
+     10. MOTION & TRANSITION TOKENS
+     ========================================================================== */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ==========================================================================
+   GLOBAL RESET & LAYERED BACKGROUND DEPTH
+   ========================================================================== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -42,6 +104,12 @@
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
+  /* Subtle ambient lighting for enterprise depth */
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 55%),
+    radial-gradient(circle at 90% 15%, rgba(6, 182, 212, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 10% 85%, rgba(99, 102, 241, 0.04) 0%, transparent 40%);
+  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
@@ -49,14 +117,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-code, pre {
+code, pre, .font-mono {
   font-family: var(--font-mono);
 }
 
 a {
   color: var(--accent-primary);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition: color var(--transition-fast);
 }
 
 a:hover {
@@ -68,7 +136,7 @@ button {
   cursor: pointer;
   border: none;
   background: none;
-  transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease;
+  transition: opacity var(--transition-fast), transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
@@ -81,7 +149,9 @@ input, textarea, select {
   outline: none;
 }
 
-/* Custom Scrollbars */
+/* ==========================================================================
+   CUSTOM SCROLLBARS
+   ========================================================================== */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -93,14 +163,390 @@ input, textarea, select {
 
 ::-webkit-scrollbar-thumb {
   background: #374151;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
 }
 
-/* Spin Animation */
+/* ==========================================================================
+   GLASS SURFACE SYSTEM
+   ========================================================================== */
+.glass-surface {
+  background: var(--bg-surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-surface-hover {
+  transition: background var(--transition-normal), border-color var(--transition-normal), transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.glass-surface-hover:hover {
+  background: rgba(31, 41, 55, 0.85);
+  border-color: var(--border-interactive);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.glass-panel {
+  background: rgba(17, 24, 39, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+}
+
+/* ==========================================================================
+   WEB3 GLOW UTILITIES
+   ========================================================================== */
+.glow-indigo {
+  box-shadow: var(--glow-indigo);
+}
+
+.glow-cyan {
+  box-shadow: var(--glow-cyan);
+}
+
+.glow-green {
+  box-shadow: var(--glow-green);
+}
+
+.glow-amber {
+  box-shadow: var(--glow-amber);
+}
+
+.glow-red {
+  box-shadow: var(--glow-red);
+}
+
+/* ==========================================================================
+   TYPOGRAPHY HIERARCHY UTILITIES
+   ========================================================================== */
+.text-page-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.text-page-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.text-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.text-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.text-body {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.text-secondary {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.text-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.text-dpp-id {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent-secondary);
+  background: var(--accent-secondary-tint);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+}
+
+.text-address {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.text-hash {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   STANDARDIZED BUTTON SYSTEM
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  box-shadow: var(--glow-indigo);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+  border-color: var(--border-interactive);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: var(--glow-red);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: var(--glow-green);
+  transform: translateY(-1px);
+}
+
+.btn-wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid var(--border-default);
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.btn-wallet:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-card);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   STANDARDIZED CARD SYSTEM
+   ========================================================================== */
+.card-base {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-md);
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card-elevated {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.card-interactive:hover {
+  border-color: var(--border-interactive);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-verified {
+  border: 1px solid var(--border-verified);
+  background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, var(--bg-secondary) 100%);
+}
+
+.card-warning {
+  border: 1px solid var(--status-warning-tint);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-secondary) 100%);
+}
+
+.card-danger {
+  border: 1px solid var(--border-danger);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, var(--bg-secondary) 100%);
+}
+
+/* ==========================================================================
+   STANDARDIZED FORM & INPUT SYSTEM
+   ========================================================================== */
+.input-base {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-base:hover {
+  border-color: var(--border-interactive);
+}
+
+.input-base:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.input-base:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(31, 41, 55, 0.5);
+}
+
+.select-base {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.select-base:focus {
+  border-color: var(--accent-primary);
+}
+
+.label-base {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+/* ==========================================================================
+   BADGE & STATUS PILLS
+   ========================================================================== */
+.badge-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  color: var(--status-success);
+  background: var(--status-success-tint);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-warning {
+  color: var(--status-warning);
+  background: var(--status-warning-tint);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-danger {
+  color: var(--status-danger);
+  background: var(--status-danger-tint);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-info {
+  color: var(--status-info);
+  background: var(--status-info-tint);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-dpp {
+  color: var(--accent-secondary);
+  background: var(--accent-secondary-tint);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   ANIMATIONS & KEYFRAMES (PRESERVED)
+   ========================================================================== */
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -110,7 +556,6 @@ input, textarea, select {
   }
 }
 
-/* Timeline Node Halo Pulse */
 @keyframes nodePulse {
   0% {
     box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6);
@@ -137,7 +582,7 @@ input, textarea, select {
   height: 0;
 }
 
-/* Timeline Animation Styles */
+/* Timeline Animation Styles (Preserved) */
 .timeline-card-left {
   opacity: 0;
   transform: translateX(-32px);
