@@ -16,6 +16,8 @@ import {
   LuTag,
   LuLayers,
   LuWarehouse,
+  LuShieldCheck,
+  LuCpu,
 } from "react-icons/lu";
 import { Link } from "react-router-dom";
 
@@ -57,51 +59,55 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <>
       <div
+        className="card-base"
         style={{
-          background: "var(--bg-secondary, #111827)",
-          border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
-          borderRadius: "var(--radius-lg, 16px)",
-          padding: "1.75rem",
-          boxShadow: "var(--shadow-md)",
+          background: "var(--bg-secondary)",
+          border: "1px solid var(--border-default)",
+          padding: "2rem",
           display: "flex",
           flexDirection: "column",
-          gap: "1.25rem",
-          transition: "border-color 0.2s ease, transform 0.2s ease",
+          gap: "1.5rem",
+          boxShadow: "var(--shadow-sm)",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        {/* Header: Title & Badges */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
+        {/* Subtle top ambient accent line (Restrained Slate Tone) */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "2px",
+            background: "linear-gradient(90deg, #5F789D 0%, #7187A8 50%, #8298B8 100%)",
+          }}
+        />
+
+        {/* Header: DPP ID & Status Badges */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.85rem",
-                  color: "var(--accent-secondary, #06b6d4)",
-                  background: "rgba(6, 182, 212, 0.12)",
-                  border: "1px solid rgba(6, 182, 212, 0.3)",
-                  padding: "0.25rem 0.6rem",
-                  borderRadius: "var(--radius-sm)",
-                  fontWeight: 700,
-                  letterSpacing: "0.03em",
-                }}
-              >
+            {/* Identity Badge Strip */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+              <span className="text-dpp-id" style={{ fontSize: "0.9rem" }}>
                 {product.dppId || `#${passportIdStr}`}
               </span>
+
               <span
                 style={{
                   fontFamily: "var(--font-mono)",
                   fontSize: "0.75rem",
                   color: "var(--text-muted)",
                   background: "rgba(255, 255, 255, 0.04)",
-                  padding: "0.2rem 0.45rem",
+                  padding: "0.2rem 0.5rem",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--border-subtle)",
                 }}
-                title="Internal Blockchain Identifier"
+                title="Internal Blockchain Passport Index"
               >
                 Passport #{passportIdStr}
               </span>
+
               <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                 <StatusBadge status={product.status} isInventory={isInventory} />
                 <WarrantyBadge warranty={product.warranty} />
@@ -109,68 +115,89 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
 
             <h2
+              className="text-card-title"
               style={{
-                fontSize: "1.5rem",
-                fontWeight: 700,
-                color: "var(--text-primary, #f9fafb)",
-                marginBottom: "0.25rem",
+                fontSize: "1.75rem",
+                fontWeight: 800,
+                letterSpacing: "-0.02em",
+                marginBottom: "0.2rem",
+                color: "#ffffff",
               }}
             >
               {product.productName}
             </h2>
 
-            <div
-              style={{
-                color: "var(--text-secondary, #9ca3af)",
-                fontSize: "0.9rem",
-              }}
-            >
+            <div style={{ color: "var(--accent-primary)", fontSize: "0.95rem", fontWeight: 600 }}>
               {product.brand}
             </div>
           </div>
+
+          {/* QR Code Quick Action */}
+          {showActions && (
+            <button
+              onClick={() => setIsQRModalOpen(true)}
+              className="btn btn-secondary"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.45rem",
+                padding: "0.5rem 0.95rem",
+                fontSize: "0.85rem",
+              }}
+              title="View & Export Verification QR Code"
+            >
+              <LuQrCode style={{ fontSize: "1.05rem", color: "var(--accent-primary)" }} />
+              <span>Scan / QR Code</span>
+            </button>
+          )}
         </div>
 
-        {/* Specifications Grid */}
+        {/* Specifications Technical Grid */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
             gap: "1rem",
-            padding: "1rem",
-            background: "var(--bg-card, #1f2937)",
-            borderRadius: "var(--radius-md, 10px)",
-            border: "1px solid var(--border-subtle, rgba(255,255,255,0.08))",
-            fontSize: "0.875rem",
+            padding: "1.15rem 1.25rem",
+            background: "var(--bg-card)",
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--border-subtle)",
           }}
         >
           <div>
-            <div style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+            <div className="text-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.25rem" }}>
               <LuTag /> Serial Number
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, color: "var(--text-primary)" }}>
+            <div className="text-address" style={{ fontWeight: 700, color: "var(--text-primary)" }}>
               {product.serialNumber}
             </div>
           </div>
 
           <div>
-            <div style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+            <div className="text-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.25rem" }}>
               <LuLayers /> Model Number
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+            <div className="text-address" style={{ color: "var(--text-primary)" }}>
               {product.modelNumber}
             </div>
           </div>
 
           <div>
-            <div style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+            <div className="text-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.25rem" }}>
               <LuCalendar /> Manufactured
             </div>
-            <div style={{ color: "var(--text-primary)" }}>{manufactureDate}</div>
+            <div style={{ color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500 }}>
+              {manufactureDate}
+            </div>
           </div>
 
           <div>
-            <div style={{ color: "var(--text-muted)" }}>Category</div>
-            <div style={{ color: "var(--text-primary)" }}>{product.category}</div>
+            <div className="text-label" style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.25rem" }}>
+              <LuCpu /> Category
+            </div>
+            <div style={{ color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 600 }}>
+              {product.category}
+            </div>
           </div>
         </div>
 
@@ -179,28 +206,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "0.5rem",
-            background: "var(--bg-card, #1f2937)",
-            padding: "0.85rem 1rem",
+            gap: "0.75rem",
+            background: "var(--bg-card)",
+            padding: "1rem 1.25rem",
             borderRadius: "var(--radius-md)",
             border: "1px solid var(--border-subtle)",
-            fontSize: "0.825rem",
+            fontSize: "0.85rem",
           }}
         >
+          {/* Manufacturer & Registration Date */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <span style={{ color: "var(--text-secondary)" }}>Manufacturer:</span>
-              <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 500 }}>
-                {truncate(product.manufacturer)}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+              <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Manufacturer:</span>
+              <span className="text-address">{truncate(product.manufacturer)}</span>
               <button
                 onClick={handleCopyMfg}
                 title="Copy Manufacturer Address"
                 style={{
                   color: copiedMfg ? "var(--status-success)" : "var(--text-muted)",
-                  fontSize: "0.9rem",
+                  fontSize: "0.95rem",
                   display: "inline-flex",
                   alignItems: "center",
+                  padding: "0.15rem",
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
@@ -210,44 +237,46 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </button>
             </div>
 
-            <div style={{ color: "var(--text-muted)", fontSize: "0.775rem" }}>
-              Registered: {createdDate}
+            <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+              Registered On-Chain: {createdDate}
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+          {/* Current Custody / Owner */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", borderTop: "1px solid var(--border-subtle)", paddingTop: "0.6rem" }}>
             {isInventory ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ color: "var(--text-secondary)" }}>Current Custody:</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Current Custody:</span>
                 <span
                   style={{
                     color: "var(--accent-primary)",
-                    fontWeight: 600,
+                    fontWeight: 700,
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "0.3rem",
-                    background: "rgba(99, 102, 241, 0.12)",
-                    padding: "0.15rem 0.5rem",
+                    gap: "0.35rem",
+                    background: "var(--accent-primary-tint)",
+                    border: "1px solid var(--border-active)",
+                    padding: "0.2rem 0.6rem",
                     borderRadius: "var(--radius-sm)",
+                    fontSize: "0.8rem",
                   }}
                 >
                   <LuWarehouse /> Manufacturer Inventory (Unsold)
                 </span>
               </div>
             ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ color: "var(--text-secondary)" }}>Current Owner:</span>
-                <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 500 }}>
-                  {truncate(product.currentOwner)}
-                </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Current Owner:</span>
+                <span className="text-address">{truncate(product.currentOwner)}</span>
                 <button
                   onClick={handleCopyOwner}
                   title="Copy Owner Address"
                   style={{
                     color: copiedOwner ? "var(--status-success)" : "var(--text-muted)",
-                    fontSize: "0.9rem",
+                    fontSize: "0.95rem",
                     display: "inline-flex",
                     alignItems: "center",
+                    padding: "0.15rem",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -277,41 +306,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: "0.75rem",
-              paddingTop: "0.5rem",
+              gap: "1rem",
+              paddingTop: "0.75rem",
               borderTop: "1px solid var(--border-subtle)",
+              flexWrap: "wrap",
             }}
           >
-            <button
-              onClick={() => setIsQRModalOpen(true)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.5rem 0.85rem",
-                background: "var(--bg-card)",
-                color: "var(--text-primary)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-sm)",
-                fontSize: "0.85rem",
-                fontWeight: 500,
-              }}
-            >
-              <LuQrCode /> Show QR Code
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--status-success)", fontSize: "0.825rem", fontWeight: 600 }}>
+              <LuShieldCheck /> Cryptographically Signed On-Chain Asset
+            </div>
 
             <Link
               to={`/verify/${product.dppId || passportIdStr}`}
+              className="btn btn-ghost"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.4rem",
                 fontSize: "0.85rem",
-                fontWeight: 600,
                 color: "var(--accent-primary)",
+                fontWeight: 600,
               }}
             >
-              Public Verify <LuExternalLink />
+              Public Certificate View <LuExternalLink />
             </Link>
           </div>
         )}

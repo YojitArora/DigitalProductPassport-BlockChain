@@ -6,83 +6,81 @@
   --font-mono: 'JetBrains Mono', monospace;
 
   /* ==========================================================================
-     2. BACKGROUND & SURFACE TOKENS
+     2. BACKGROUND & SURFACE TOKENS (PITCH BLACK FIRST)
      ========================================================================== */
-  --bg-primary: #0a0e17;              /* Deep slate page background */
-  --bg-secondary: #111827;            /* Default surface / panel container */
-  --bg-card: #1f2937;                 /* Elevated card / input surface */
-  --bg-card-hover: #374151;           /* Elevated surface hover */
-  --bg-surface-glass: rgba(17, 24, 39, 0.75); /* Glassmorphism translucent layer */
-  --bg-overlay: rgba(0, 0, 0, 0.75);  /* Modal & backdrop overlay */
+  --bg-primary: #000000;              /* Pitch black main background */
+  --bg-secondary: #0a0a0a;            /* Deep black-charcoal surface / panel */
+  --bg-card: #111111;                 /* Dark charcoal elevated card / input */
+  --bg-card-hover: #181818;           /* Subtle card hover */
+  --bg-surface-glass: rgba(10, 10, 10, 0.88); /* Translucent dark glass */
+  --bg-overlay: rgba(0, 0, 0, 0.85);  /* Modal backdrop overlay */
 
   /* ==========================================================================
-     3. BORDER & DIVIDER TOKENS
+     3. BORDER & DIVIDER TOKENS (THIN, RESTRAINED SLATE/GREY)
      ========================================================================== */
   --border-subtle: rgba(255, 255, 255, 0.08); /* Default quiet border */
-  --border-default: rgba(255, 255, 255, 0.15); /* Visible container divider */
-  --border-interactive: rgba(255, 255, 255, 0.25); /* Hoverable interactive border */
-  --border-active: rgba(99, 102, 241, 0.4);   /* Focused / active indigo border */
-  --border-focus: #6366f1;                    /* Form focus ring */
-  --border-verified: rgba(6, 182, 212, 0.4);  /* Verified Web3 identity border */
-  --border-danger: rgba(239, 68, 68, 0.4);    /* Stolen / critical error border */
+  --border-default: rgba(255, 255, 255, 0.14); /* Visible boundary */
+  --border-interactive: rgba(255, 255, 255, 0.22); /* Interactive hover */
+  --border-active: rgba(113, 135, 168, 0.45);   /* Restrained slate-blue border */
+  --border-focus: #7187A8;                    /* Form focus border */
+  --border-verified: rgba(113, 135, 168, 0.35); /* Technical verification border */
+  --border-danger: rgba(239, 68, 68, 0.35);    /* Theft / error border */
 
   /* ==========================================================================
      4. TYPOGRAPHY COLOR TOKENS
      ========================================================================== */
-  --text-primary: #f9fafb;            /* High-contrast headings & primary values */
-  --text-secondary: #9ca3af;          /* Descriptive body & subtitle copy */
-  --text-muted: #6b7280;              /* Labels, timestamps, & captions */
-  --text-disabled: #4b5563;           /* Inactive elements */
-  --text-inverse: #0a0e17;            /* Dark text on bright badge fills */
+  --text-primary: #f4f4f5;            /* Crisp off-white headings & values */
+  --text-secondary: #a1a1aa;          /* Clean neutral light grey copy */
+  --text-muted: #71717a;              /* Muted captions, timestamps, & labels */
+  --text-disabled: #52525b;           /* Inactive elements */
+  --text-inverse: #000000;            /* Inverted dark text */
 
   /* ==========================================================================
-     5. ACCENT & BRAND TOKENS
+     5. RESTRAINED SLATE-BLUE ACCENT TOKENS
      ========================================================================== */
-  --accent-primary: #6366f1;          /* Electric Indigo - Primary actions */
-  --accent-primary-hover: #4f46e5;    /* Indigo hover */
-  --accent-primary-tint: rgba(99, 102, 241, 0.12); /* Indigo badge / pill background */
-  --accent-secondary: #06b6d4;        /* Cyan - DPP identity & on-chain trust */
-  --accent-secondary-hover: #0891b2;  /* Cyan hover */
-  --accent-secondary-tint: rgba(6, 182, 212, 0.12); /* Cyan badge background */
+  --accent-primary: #7187A8;          /* Slate Blue - Technical Web3 accent */
+  --accent-primary-hover: #8ca5c8;    /* Lighter slate hover */
+  --accent-primary-tint: rgba(113, 135, 168, 0.12); /* Subtle slate badge / pill */
+  --accent-secondary: #8298B8;        /* Steel / Metallic slate */
+  --accent-secondary-hover: #9bb2d4;  /* Steel hover */
+  --accent-secondary-tint: rgba(130, 152, 184, 0.12);
 
   /* ==========================================================================
      6. LIFECYCLE & STATUS TOKENS
      ========================================================================== */
   --status-success: #10b981;          /* Emerald - Active / Valid warranty / Recovered */
-  --status-success-tint: rgba(16, 185, 129, 0.12);
-  --status-warning: #f59e0b;          /* Amber - Under service / Expiring warranty */
-  --status-warning-tint: rgba(245, 158, 11, 0.12);
-  --status-danger: #ef4444;           /* Coral Red - Reported stolen / Revoked / Failed */
-  --status-danger-tint: rgba(239, 68, 68, 0.15);
-  --status-info: #3b82f6;             /* Royal Blue - Ownership transfer / Notice */
-  --status-info-tint: rgba(59, 130, 246, 0.12);
+  --status-success-tint: rgba(16, 185, 129, 0.10);
+  --status-warning: #f59e0b;          /* Amber - Under service / Expiring */
+  --status-warning-tint: rgba(245, 158, 11, 0.10);
+  --status-danger: #ef4444;           /* Coral Red - Stolen / Revoked / Error */
+  --status-danger-tint: rgba(239, 68, 68, 0.10);
+  --status-info: #7187A8;             /* Slate Blue - General notice / transfer */
+  --status-info-tint: rgba(113, 135, 168, 0.12);
 
   /* ==========================================================================
      7. CORNER RADIUS TOKENS
      ========================================================================== */
-  --radius-sm: 6px;                   /* Small badges, pills, & compact buttons */
-  --radius-md: 10px;                  /* Standard buttons & inputs */
-  --radius-lg: 16px;                  /* Cards, panels, & modals */
-  --radius-xl: 24px;                  /* Hero containers & large cards */
+  --radius-sm: 6px;                   /* Small badges & compact buttons */
+  --radius-md: 8px;                   /* Standard buttons & inputs */
+  --radius-lg: 12px;                  /* Cards, panels, & modals */
+  --radius-xl: 16px;                  /* Large hero containers */
   --radius-full: 9999px;              /* Circular nodes & pill badges */
 
   /* ==========================================================================
-     8. SHADOW & DEPTH TOKENS
+     8. SHADOW & DEPTH TOKENS (MINIMAL & NON-NEON)
      ========================================================================== */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -4px rgba(0, 0, 0, 0.25);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
 
   /* ==========================================================================
-     9. WEB3 GLOW TOKENS
+     9. WEB3 GLOW TOKENS (RESTRAINED & SUBTLE)
      ========================================================================== */
-  --glow-indigo: 0 0 16px rgba(99, 102, 241, 0.45);
-  --glow-cyan: 0 0 16px rgba(6, 182, 212, 0.45);
-  --glow-green: 0 0 16px rgba(16, 185, 129, 0.45);
-  --glow-amber: 0 0 16px rgba(245, 158, 11, 0.45);
-  --glow-red: 0 0 16px rgba(239, 68, 68, 0.45);
+  --glow-slate: 0 0 10px rgba(113, 135, 168, 0.2);
+  --glow-green: 0 0 10px rgba(16, 185, 129, 0.2);
+  --glow-amber: 0 0 10px rgba(245, 158, 11, 0.2);
+  --glow-red: 0 0 10px rgba(239, 68, 68, 0.2);
 
   /* ==========================================================================
      10. MOTION & TRANSITION TOKENS
@@ -93,7 +91,7 @@
 }
 
 /* ==========================================================================
-   GLOBAL RESET & LAYERED BACKGROUND DEPTH
+   GLOBAL RESET & PITCH BLACK BACKGROUND
    ========================================================================== */
 * {
   box-sizing: border-box;
@@ -104,12 +102,7 @@
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
-  /* Subtle ambient lighting for enterprise depth */
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 55%),
-    radial-gradient(circle at 90% 15%, rgba(6, 182, 212, 0.05) 0%, transparent 45%),
-    radial-gradient(circle at 10% 85%, rgba(99, 102, 241, 0.04) 0%, transparent 40%);
-  background-attachment: fixed;
+  background-image: none; /* No blue radial gradients */
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
@@ -128,7 +121,7 @@ a {
 }
 
 a:hover {
-  color: var(--accent-secondary);
+  color: var(--accent-primary-hover);
 }
 
 button {
@@ -153,8 +146,8 @@ input, textarea, select {
    CUSTOM SCROLLBARS
    ========================================================================== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -162,16 +155,16 @@ input, textarea, select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: #27272a;
   border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: #3f3f46;
 }
 
 /* ==========================================================================
-   GLASS SURFACE SYSTEM
+   GLASS & DARK SURFACE SYSTEM
    ========================================================================== */
 .glass-surface {
   background: var(--bg-surface-glass);
@@ -185,30 +178,24 @@ input, textarea, select {
 }
 
 .glass-surface-hover:hover {
-  background: rgba(31, 41, 55, 0.85);
+  background: #141414;
   border-color: var(--border-interactive);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .glass-panel {
-  background: rgba(17, 24, 39, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #0a0a0a;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-glass);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ==========================================================================
-   WEB3 GLOW UTILITIES
+   SUBTLE ACCENT UTILITIES
    ========================================================================== */
-.glow-indigo {
-  box-shadow: var(--glow-indigo);
-}
-
-.glow-cyan {
-  box-shadow: var(--glow-cyan);
+.glow-slate {
+  box-shadow: var(--glow-slate);
 }
 
 .glow-green {
@@ -235,13 +222,13 @@ input, textarea, select {
 }
 
 .text-page-subtitle {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .text-section-title {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -270,9 +257,9 @@ input, textarea, select {
 }
 
 .text-label {
-  font-size: 0.75rem;
+  font-size: 0.725rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -282,8 +269,8 @@ input, textarea, select {
   font-weight: 700;
   color: var(--accent-secondary);
   background: var(--accent-secondary-tint);
-  border: 1px solid rgba(6, 182, 212, 0.3);
-  padding: 0.2rem 0.55rem;
+  border: 1px solid rgba(113, 135, 168, 0.3);
+  padding: 0.25rem 0.6rem;
   border-radius: var(--radius-sm);
 }
 
@@ -300,7 +287,7 @@ input, textarea, select {
 }
 
 /* ==========================================================================
-   STANDARDIZED BUTTON SYSTEM
+   STANDARDIZED BUTTON SYSTEM (SLATE BLUE & DARK SURFACES)
    ========================================================================== */
 .btn {
   display: inline-flex;
@@ -318,15 +305,16 @@ input, textarea, select {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #253346;
+  color: #f1f5f9;
+  border: 1px solid rgba(113, 135, 168, 0.35);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  box-shadow: var(--glow-indigo);
+  background: #314259;
+  border-color: rgba(113, 135, 168, 0.55);
+  color: #ffffff;
   transform: translateY(-1px);
 }
 
@@ -355,26 +343,26 @@ input, textarea, select {
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #3b1818;
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  box-shadow: var(--glow-red);
+  background: #4f1d1d;
+  color: #ffffff;
   transform: translateY(-1px);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #143325;
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .btn-success:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: var(--glow-green);
+  background: #1a4230;
+  color: #ffffff;
   transform: translateY(-1px);
 }
 
@@ -382,7 +370,7 @@ input, textarea, select {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(17, 24, 39, 0.85);
+  background: #0e0e0e;
   border: 1px solid var(--border-default);
   padding: 0.45rem 0.9rem;
   border-radius: var(--radius-full);
@@ -394,26 +382,26 @@ input, textarea, select {
 
 .btn-wallet:hover {
   border-color: var(--accent-primary);
-  background: var(--bg-card);
+  background: #161616;
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
 }
 
 /* ==========================================================================
-   STANDARDIZED CARD SYSTEM
+   STANDARDIZED CARD SYSTEM (DARK CHARCOAL FIRST)
    ========================================================================== */
 .card-base {
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
-  box-shadow: var(--shadow-md);
-  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
 }
 
 .card-elevated {
@@ -421,28 +409,27 @@ input, textarea, select {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .card-interactive:hover {
   border-color: var(--border-interactive);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
 }
 
 .card-verified {
   border: 1px solid var(--border-verified);
-  background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, var(--bg-secondary) 100%);
+  background: #0a0a0a;
 }
 
 .card-warning {
-  border: 1px solid var(--status-warning-tint);
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-secondary) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: #0a0a0a;
 }
 
 .card-danger {
   border: 1px solid var(--border-danger);
-  background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, var(--bg-secondary) 100%);
+  background: #0a0a0a;
 }
 
 /* ==========================================================================
@@ -456,7 +443,7 @@ input, textarea, select {
   padding: 0.65rem 0.9rem;
   color: var(--text-primary);
   font-size: 0.9rem;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast);
 }
 
 .input-base:hover {
@@ -465,13 +452,12 @@ input, textarea, select {
 
 .input-base:focus {
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 .input-base:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: rgba(31, 41, 55, 0.5);
+  background: #161616;
 }
 
 .select-base {
@@ -492,20 +478,20 @@ input, textarea, select {
 
 .label-base {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.775rem;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 0.4rem;
 }
 
 /* ==========================================================================
-   BADGE & STATUS PILLS
+   BADGE & STATUS PILLS (RESTRAINED)
    ========================================================================== */
 .badge-base {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.25rem 0.6rem;
+  padding: 0.22rem 0.55rem;
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 700;
@@ -516,31 +502,31 @@ input, textarea, select {
 .badge-success {
   color: var(--status-success);
   background: var(--status-success-tint);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .badge-warning {
   color: var(--status-warning);
   background: var(--status-warning-tint);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .badge-danger {
   color: var(--status-danger);
   background: var(--status-danger-tint);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .badge-info {
   color: var(--status-info);
   background: var(--status-info-tint);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(113, 135, 168, 0.25);
 }
 
 .badge-dpp {
   color: var(--accent-secondary);
   background: var(--accent-secondary-tint);
-  border: 1px solid rgba(6, 182, 212, 0.35);
+  border: 1px solid rgba(113, 135, 168, 0.3);
   font-family: var(--font-mono);
 }
 
@@ -558,13 +544,13 @@ input, textarea, select {
 
 @keyframes nodePulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6);
+    box-shadow: 0 0 0 0 rgba(113, 135, 168, 0.5);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+    box-shadow: 0 0 0 8px rgba(113, 135, 168, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    box-shadow: 0 0 0 0 rgba(113, 135, 168, 0);
   }
 }
 

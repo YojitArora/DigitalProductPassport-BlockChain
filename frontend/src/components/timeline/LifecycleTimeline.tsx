@@ -26,46 +26,46 @@ interface LifecycleTimelineProps {
 
 const CATEGORY_COLORS: Record<LedgerCategory, { color: string; bg: string; border: string; glow: string }> = {
   Manufacturing: {
-    color: "var(--accent-primary, #6366f1)",
-    bg: "rgba(99, 102, 241, 0.12)",
-    border: "rgba(99, 102, 241, 0.35)",
-    glow: "rgba(99, 102, 241, 0.4)",
+    color: "var(--accent-primary, #7187A8)",
+    bg: "rgba(113, 135, 168, 0.12)",
+    border: "rgba(113, 135, 168, 0.35)",
+    glow: "rgba(113, 135, 168, 0.25)",
   },
   Warranty: {
     color: "var(--status-success, #10b981)",
-    bg: "rgba(16, 185, 129, 0.12)",
-    border: "rgba(16, 185, 129, 0.35)",
-    glow: "rgba(16, 185, 129, 0.4)",
+    bg: "rgba(16, 185, 129, 0.10)",
+    border: "rgba(16, 185, 129, 0.25)",
+    glow: "rgba(16, 185, 129, 0.2)",
   },
   Ownership: {
-    color: "var(--status-info, #3b82f6)",
-    bg: "rgba(59, 130, 246, 0.12)",
-    border: "rgba(59, 130, 246, 0.35)",
-    glow: "rgba(59, 130, 246, 0.4)",
+    color: "var(--accent-secondary, #8298B8)",
+    bg: "rgba(130, 152, 184, 0.12)",
+    border: "rgba(130, 152, 184, 0.35)",
+    glow: "rgba(130, 152, 184, 0.25)",
   },
   Custody: {
-    color: "var(--accent-secondary, #06b6d4)",
-    bg: "rgba(6, 182, 212, 0.12)",
-    border: "rgba(6, 182, 212, 0.35)",
-    glow: "rgba(6, 182, 212, 0.4)",
+    color: "var(--accent-primary, #7187A8)",
+    bg: "rgba(113, 135, 168, 0.12)",
+    border: "rgba(113, 135, 168, 0.35)",
+    glow: "rgba(113, 135, 168, 0.25)",
   },
   Service: {
     color: "var(--status-warning, #f59e0b)",
-    bg: "rgba(245, 158, 11, 0.12)",
-    border: "rgba(245, 158, 11, 0.35)",
-    glow: "rgba(245, 158, 11, 0.4)",
+    bg: "rgba(245, 158, 11, 0.10)",
+    border: "rgba(245, 158, 11, 0.25)",
+    glow: "rgba(245, 158, 11, 0.2)",
   },
   Security: {
     color: "var(--status-danger, #ef4444)",
-    bg: "rgba(239, 68, 68, 0.15)",
-    border: "rgba(239, 68, 68, 0.35)",
-    glow: "rgba(239, 68, 68, 0.4)",
+    bg: "rgba(239, 68, 68, 0.10)",
+    border: "rgba(239, 68, 68, 0.25)",
+    glow: "rgba(239, 68, 68, 0.2)",
   },
   Certification: {
-    color: "#a855f7",
-    bg: "rgba(168, 85, 247, 0.12)",
-    border: "rgba(168, 85, 247, 0.35)",
-    glow: "rgba(168, 85, 247, 0.4)",
+    color: "var(--accent-secondary, #8298B8)",
+    bg: "rgba(130, 152, 184, 0.12)",
+    border: "rgba(130, 152, 184, 0.35)",
+    glow: "rgba(130, 152, 184, 0.25)",
   },
 };
 
@@ -282,11 +282,11 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
   return (
     <div
       style={{
-        background: "var(--bg-secondary, #111827)",
-        border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
-        borderRadius: "var(--radius-lg, 16px)",
+        background: "var(--bg-secondary)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
         padding: "2rem 1.5rem",
-        boxShadow: "var(--shadow-lg)",
+        boxShadow: "var(--shadow-sm)",
         position: "relative",
       }}
     >
@@ -294,7 +294,7 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
       <div style={{ marginBottom: "2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
           <div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.25rem 0.65rem", background: "rgba(99, 102, 241, 0.12)", color: "var(--accent-primary, #6366f1)", borderRadius: "var(--radius-sm)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.25rem 0.65rem", background: "var(--accent-primary-tint)", color: "var(--accent-primary)", border: "1px solid var(--border-active)", borderRadius: "var(--radius-sm)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
               <LuSparkles /> Chronological Audit Ledger
             </div>
             <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
@@ -313,9 +313,9 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
                   fontFamily: "var(--font-mono)",
                   fontWeight: 700,
                   fontSize: "0.85rem",
-                  color: "var(--accent-secondary, #06b6d4)",
-                  background: "rgba(6, 182, 212, 0.12)",
-                  border: "1px solid rgba(6, 182, 212, 0.3)",
+                  color: "var(--accent-secondary)",
+                  background: "var(--accent-secondary-tint)",
+                  border: "1px solid rgba(113, 135, 168, 0.3)",
                   padding: "0.25rem 0.6rem",
                   borderRadius: "var(--radius-sm)",
                 }}
@@ -506,25 +506,24 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
             >
               <defs>
                 <linearGradient id="wavyGlowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#818cf8" stopOpacity="0.95" />
-                  <stop offset="35%" stopColor="#06b6d4" stopOpacity="0.95" />
-                  <stop offset="70%" stopColor="#10b981" stopOpacity="0.95" />
-                  <stop offset="100%" stopColor="#a855f7" stopOpacity="0.95" />
+                  <stop offset="0%" stopColor="#7187A8" stopOpacity="0.95" />
+                  <stop offset="50%" stopColor="#8298B8" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#5F789D" stopOpacity="0.95" />
                 </linearGradient>
               </defs>
 
-              {/* Foreground active glowing wavy path revealed progressively with scroll */}
+              {/* Foreground active wavy path revealed progressively with scroll */}
               <path
                 ref={activePathRef}
                 d={wavyPathD}
                 fill="none"
                 stroke="url(#wavyGlowGradient)"
-                strokeWidth="3.5"
+                strokeWidth="3"
                 pathLength="1000"
                 strokeDasharray="1000"
                 strokeDashoffset="1000"
                 style={{
-                  filter: "drop-shadow(0 0 6px rgba(99, 102, 241, 0.8)) drop-shadow(0 0 12px rgba(6, 182, 212, 0.4))",
+                  filter: "drop-shadow(0 0 3px rgba(113, 135, 168, 0.4))",
                 }}
               />
             </svg>
@@ -540,9 +539,9 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
                 left: 0,
                 width: "100%",
                 height: "0%",
-                background: "linear-gradient(180deg, #6366f1 0%, #06b6d4 50%, #10b981 100%)",
+                background: "linear-gradient(180deg, #5F789D 0%, #7187A8 50%, #8298B8 100%)",
                 borderRadius: "2px",
-                boxShadow: "0 0 6px rgba(99, 102, 241, 0.6)",
+                boxShadow: "0 0 4px rgba(113, 135, 168, 0.3)",
               }}
             />
           </div>

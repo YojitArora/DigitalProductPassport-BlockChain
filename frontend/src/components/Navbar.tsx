@@ -48,15 +48,16 @@ export const Navbar: React.FC = () => {
         position: "sticky",
         top: 0,
         zIndex: 1000,
-        background: "rgba(17, 24, 39, 0.88)",
+        background: "rgba(5, 5, 5, 0.92)",
         backdropFilter: "blur(12px)",
-        borderBottom: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "1px solid var(--border-subtle)",
         padding: "0.85rem 1.5rem",
       }}
     >
       <div
         style={{
-          maxWidth: "1200px",
+          maxWidth: "1100px",
           margin: "0 auto",
           display: "flex",
           alignItems: "center",
@@ -71,7 +72,7 @@ export const Navbar: React.FC = () => {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.6rem",
+            gap: "0.65rem",
             textDecoration: "none",
             color: "var(--text-primary)",
           }}
@@ -81,12 +82,13 @@ export const Navbar: React.FC = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
-              color: "#ffffff",
-              fontSize: "20px",
+              width: "34px",
+              height: "34px",
+              borderRadius: "var(--radius-sm)",
+              background: "#16202c",
+              border: "1px solid rgba(113, 135, 168, 0.3)",
+              color: "var(--accent-primary)",
+              fontSize: "18px",
             }}
           >
             <LuShieldCheck />
@@ -95,8 +97,8 @@ export const Navbar: React.FC = () => {
             <div style={{ fontWeight: 700, fontSize: "1.05rem", letterSpacing: "-0.01em", lineHeight: 1.1 }}>
               ProductPassport
             </div>
-            <div style={{ fontSize: "0.7rem", color: "var(--accent-secondary)", fontWeight: 500 }}>
-              Enterprise Operations
+            <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              Enterprise Web3 Infrastructure
             </div>
           </div>
         </Link>
@@ -111,12 +113,13 @@ export const Navbar: React.FC = () => {
               gap: "0.4rem",
               padding: "0.45rem 0.85rem",
               borderRadius: "var(--radius-md)",
-              fontSize: "0.875rem",
+              fontSize: "0.85rem",
               fontWeight: 500,
               textDecoration: "none",
               color: isNavActive("/verify") ? "#ffffff" : "var(--text-secondary)",
-              background: isNavActive("/verify") ? "rgba(99, 102, 241, 0.15)" : "transparent",
-              border: isNavActive("/verify") ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
+              background: isNavActive("/verify") ? "var(--accent-primary-tint)" : "transparent",
+              border: isNavActive("/verify") ? "1px solid var(--border-active)" : "1px solid transparent",
+              transition: "all var(--transition-fast)",
             }}
           >
             <LuSearch /> Public Verify
@@ -131,12 +134,13 @@ export const Navbar: React.FC = () => {
                 gap: "0.4rem",
                 padding: "0.45rem 0.85rem",
                 borderRadius: "var(--radius-md)",
-                fontSize: "0.875rem",
+                fontSize: "0.85rem",
                 fontWeight: 500,
                 textDecoration: "none",
                 color: isNavActive("/operations") ? "#ffffff" : "var(--text-secondary)",
-                background: isNavActive("/operations") ? "rgba(99, 102, 241, 0.15)" : "transparent",
-                border: isNavActive("/operations") ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
+                background: isNavActive("/operations") ? "var(--accent-primary-tint)" : "transparent",
+                border: isNavActive("/operations") ? "1px solid var(--border-active)" : "1px solid transparent",
+                transition: "all var(--transition-fast)",
               }}
             >
               <LuLayoutDashboard /> Operations Center
@@ -145,18 +149,18 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* Network & Session Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
           {/* Network Badge */}
           {isConnected && (
             <div
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "0.35rem",
+                gap: "0.4rem",
                 padding: "0.35rem 0.65rem",
-                background: isNetworkSupported ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.12)",
-                color: isNetworkSupported ? "var(--status-success)" : "var(--status-danger)",
-                border: `1px solid ${isNetworkSupported ? "rgba(16, 185, 129, 0.25)" : "rgba(239, 68, 68, 0.25)"}`,
+                background: "var(--bg-card)",
+                color: isNetworkSupported ? "var(--text-secondary)" : "var(--status-danger)",
+                border: `1px solid ${isNetworkSupported ? "var(--border-subtle)" : "rgba(239, 68, 68, 0.35)"}`,
                 borderRadius: "var(--radius-sm)",
                 fontSize: "0.75rem",
                 fontFamily: "var(--font-mono)",
@@ -184,34 +188,34 @@ export const Navbar: React.FC = () => {
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "0.4rem",
-                  padding: "0.4rem 0.75rem",
+                  gap: "0.45rem",
+                  padding: "0.35rem 0.75rem",
                   background: "var(--bg-card)",
                   border: "1px solid var(--border-subtle)",
                   borderRadius: "var(--radius-md)",
                   fontFamily: "var(--font-mono)",
-                  fontSize: "0.825rem",
+                  fontSize: "0.8rem",
                   color: "var(--text-primary)",
                 }}
               >
-                <LuWallet style={{ color: "var(--status-success)" }} />
+                <LuWallet style={{ color: "var(--accent-primary)" }} />
                 <span>{truncate(account)}</span>
 
                 {/* Highest Role Pill */}
                 {roles.isAdmin ? (
-                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", background: "rgba(239, 68, 68, 0.2)", color: "var(--status-danger)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.35rem", background: "var(--status-danger-tint)", color: "var(--status-danger)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
                     Admin
                   </span>
                 ) : roles.isManufacturer ? (
-                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", background: "rgba(99, 102, 241, 0.2)", color: "var(--accent-primary)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.35rem", background: "var(--accent-primary-tint)", color: "var(--accent-primary)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
                     Mfg
                   </span>
                 ) : roles.isServiceCenter ? (
-                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", background: "rgba(245, 158, 11, 0.2)", color: "var(--status-warning)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.35rem", background: "var(--status-warning-tint)", color: "var(--status-warning)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
                     Service
                   </span>
                 ) : (
-                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.4rem", background: "rgba(16, 185, 129, 0.2)", color: "var(--status-success)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.65rem", padding: "0.1rem 0.35rem", background: "var(--status-success-tint)", color: "var(--status-success)", borderRadius: "var(--radius-sm)", fontWeight: 700 }}>
                     Owner
                   </span>
                 )}
@@ -225,13 +229,13 @@ export const Navbar: React.FC = () => {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "0.3rem",
-                  padding: "0.45rem 0.75rem",
-                  background: "rgba(239, 68, 68, 0.1)",
-                  color: "var(--status-danger)",
-                  border: "1px solid rgba(239, 68, 68, 0.25)",
+                  padding: "0.4rem 0.7rem",
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  border: "1px solid var(--border-subtle)",
                   borderRadius: "var(--radius-md)",
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
                   cursor: "pointer",
                 }}
               >
@@ -242,17 +246,10 @@ export const Navbar: React.FC = () => {
           ) : (
             <Link
               to="/login"
+              className="btn btn-primary"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
                 padding: "0.45rem 1rem",
-                background: "var(--accent-primary)",
-                color: "#ffffff",
-                borderRadius: "var(--radius-md)",
                 fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
               }}
             >
               <LuKey /> Sign In
