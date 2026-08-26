@@ -70,12 +70,9 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
 
   return (
     <div
+      className="card-base"
       style={{
-        background: "var(--bg-secondary, #111827)",
-        border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
-        borderRadius: "var(--radius-lg, 16px)",
-        padding: "1.75rem",
-        boxShadow: "var(--shadow-md)",
+        padding: "2rem",
       }}
     >
       {/* Section Header & Controls */}
@@ -86,46 +83,37 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
           alignItems: "center",
           flexWrap: "wrap",
           gap: "1rem",
-          marginBottom: "1.5rem",
+          marginBottom: "1.75rem",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: "36px",
-              height: "36px",
-              borderRadius: "8px",
-              background: "rgba(245, 158, 11, 0.12)",
-              color: "var(--status-warning, #f59e0b)",
-              fontSize: "18px",
+              width: "42px",
+              height: "42px",
+              borderRadius: "var(--radius-md)",
+              background: "var(--status-warning-tint)",
+              color: "var(--status-warning)",
+              fontSize: "20px",
+              border: "1px solid rgba(245, 158, 11, 0.25)",
             }}
           >
             <LuWrench />
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                Repair History
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <h2 className="text-card-title" style={{ fontSize: "1.35rem" }}>
+                Certified Maintenance & Repair Records
               </h2>
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  padding: "0.15rem 0.5rem",
-                  borderRadius: "var(--radius-sm)",
-                  background: repairEvents.length > 0 ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                  color: repairEvents.length > 0 ? "var(--status-warning)" : "var(--text-muted)",
-                  border: "1px solid var(--border-subtle)",
-                }}
-              >
+              <span className="badge-base badge-warning">
                 {repairEvents.length} {repairEvents.length === 1 ? "Record" : "Records"}
               </span>
             </div>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.825rem", marginTop: "0.1rem" }}>
-              Official certified maintenance sessions and repair notes recorded on-chain by authorized service centers
+            <p className="text-secondary" style={{ fontSize: "0.85rem", marginTop: "0.15rem" }}>
+              Official certified service sessions, replacement notes, and maintenance signatures recorded on-chain
             </p>
           </div>
         </div>
@@ -134,24 +122,15 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
         {repairEvents.length > 1 && (
           <button
             onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
+            className="btn btn-secondary"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.4rem",
-              padding: "0.35rem 0.75rem",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--border-subtle)",
-              background: "var(--bg-card, #1f2937)",
-              color: "var(--text-secondary)",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.15s ease",
+              padding: "0.4rem 0.85rem",
+              fontSize: "0.8rem",
             }}
             title="Toggle chronological sorting"
           >
             <LuArrowUpDown />
-            {sortOrder === "asc" ? "Oldest First (Default)" : "Newest First"}
+            <span>{sortOrder === "asc" ? "Oldest First" : "Newest First"}</span>
           </button>
         )}
       </div>
@@ -161,19 +140,21 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
         <div
           style={{
             textAlign: "center",
-            padding: "2.5rem 1.5rem",
-            background: "var(--bg-card, #1f2937)",
+            padding: "3rem 1.5rem",
+            background: "var(--bg-card)",
             border: "1px solid var(--border-subtle)",
             borderRadius: "var(--radius-md)",
             color: "var(--text-muted)",
             fontSize: "0.9rem",
           }}
         >
-          <LuWrench style={{ fontSize: "2rem", color: "var(--text-muted)", marginBottom: "0.75rem", opacity: 0.7 }} />
-          <div style={{ fontWeight: 600, color: "var(--text-secondary)", marginBottom: "0.25rem" }}>
-            No Maintenance Records
+          <LuWrench style={{ fontSize: "2.25rem", color: "var(--text-muted)", marginBottom: "0.75rem", opacity: 0.6 }} />
+          <div style={{ fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.25rem", fontSize: "1rem" }}>
+            No Maintenance Records Recorded
           </div>
-          <div>No repair history has been recorded for this product.</div>
+          <div style={{ color: "var(--text-secondary)" }}>
+            This product passport contains no on-chain repair or service history.
+          </div>
         </div>
       ) : (
         /* Expandable Repair Cards List */
@@ -189,72 +170,49 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
               <div
                 key={repair.id}
                 style={{
-                  background: "var(--bg-card, #1f2937)",
-                  border: isExpanded ? "1px solid var(--status-warning, #f59e0b)" : "1px solid var(--border-subtle)",
-                  borderRadius: "var(--radius-md, 12px)",
+                  background: "var(--bg-card)",
+                  border: isExpanded ? "1px solid var(--status-warning)" : "1px solid var(--border-subtle)",
+                  borderRadius: "var(--radius-md)",
                   overflow: "hidden",
-                  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-                  boxShadow: isExpanded ? "0 4px 20px rgba(0, 0, 0, 0.3)" : "none",
+                  transition: "border-color var(--transition-fast), box-shadow var(--transition-fast)",
+                  boxShadow: isExpanded ? "var(--shadow-md)" : "none",
                 }}
               >
                 {/* Collapsed Card Header (Clickable) */}
                 <div
                   onClick={() => toggleExpand(repair.id)}
                   style={{
-                    padding: "1.25rem",
+                    padding: "1.25rem 1.5rem",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     flexWrap: "wrap",
-                    gap: "0.75rem",
-                    background: isExpanded ? "rgba(245, 158, 11, 0.04)" : "transparent",
-                    transition: "background 0.15s ease",
+                    gap: "0.85rem",
+                    background: isExpanded ? "rgba(245, 158, 11, 0.05)" : "transparent",
+                    transition: "background var(--transition-fast)",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", flexWrap: "wrap" }}>
                     {/* Badge */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.3rem",
-                        padding: "0.25rem 0.6rem",
-                        borderRadius: "var(--radius-sm)",
-                        background: "rgba(245, 158, 11, 0.15)",
-                        color: "var(--status-warning, #f59e0b)",
-                        border: "1px solid rgba(245, 158, 11, 0.3)",
-                        fontWeight: 700,
-                        fontSize: "0.8rem",
-                      }}
-                    >
+                    <span className="badge-base badge-warning" style={{ fontSize: "0.8rem" }}>
                       <LuHash /> Repair #{repairNum}
-                    </div>
+                    </span>
 
-                    <span
-                      style={{
-                        padding: "0.2rem 0.5rem",
-                        borderRadius: "var(--radius-sm)",
-                        background: "rgba(16, 185, 129, 0.12)",
-                        color: "var(--status-success, #10b981)",
-                        border: "1px solid rgba(16, 185, 129, 0.25)",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Completed
+                    <span className="badge-base badge-success" style={{ fontSize: "0.75rem" }}>
+                      Certified Completed
                     </span>
 
                     {/* Completion Date */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--text-secondary)", fontSize: "0.825rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
                       <LuCalendar style={{ color: "var(--text-muted)" }} />
                       {formatDate(repair.timestamp)}
                     </div>
 
                     {/* Performed by */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--text-primary)", fontSize: "0.825rem", fontWeight: 600 }}>
-                      <LuBuilding2 style={{ color: "var(--accent-secondary, #06b6d4)" }} />
-                      Performed by: {scName}
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-primary)", fontSize: "0.85rem", fontWeight: 600 }}>
+                      <LuBuilding2 style={{ color: "var(--accent-secondary)" }} />
+                      <span>{scName}</span>
                     </div>
                   </div>
 
@@ -265,19 +223,10 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                       e.stopPropagation();
                       toggleExpand(repair.id);
                     }}
+                    className={isExpanded ? "btn btn-primary" : "btn btn-secondary"}
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.35rem",
-                      background: isExpanded ? "var(--status-warning)" : "var(--bg-secondary, #111827)",
-                      color: isExpanded ? "#111827" : "var(--text-primary)",
-                      border: "1px solid var(--border-subtle)",
-                      borderRadius: "var(--radius-sm)",
-                      padding: "0.35rem 0.75rem",
+                      padding: "0.35rem 0.8rem",
                       fontSize: "0.75rem",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
                     }}
                   >
                     {isExpanded ? (
@@ -286,7 +235,7 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                       </>
                     ) : (
                       <>
-                        View Details <LuChevronDown />
+                        Inspect Details <LuChevronDown />
                       </>
                     )}
                   </button>
@@ -296,32 +245,32 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                 {isExpanded && (
                   <div
                     style={{
-                      padding: "1.25rem",
+                      padding: "1.5rem",
                       borderTop: "1px solid var(--border-subtle)",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "1rem",
-                      background: "rgba(0, 0, 0, 0.2)",
+                      gap: "1.25rem",
+                      background: "rgba(0, 0, 0, 0.25)",
                     }}
                   >
-                    {/* Metadata Grid */}
+                    {/* Metadata Technical Grid */}
                     <div
                       style={{
                         display: "grid",
                         gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "0.75rem",
+                        gap: "1rem",
                       }}
                     >
                       {/* Record Index */}
                       <div
                         style={{
-                          background: "var(--bg-card)",
-                          padding: "0.75rem 1rem",
+                          background: "var(--bg-secondary)",
+                          padding: "0.85rem 1rem",
                           borderRadius: "var(--radius-md)",
                           border: "1px solid var(--border-subtle)",
                         }}
                       >
-                        <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginBottom: "0.2rem" }}>
+                        <div className="text-label" style={{ marginBottom: "0.25rem" }}>
                           Sequential Repair Number
                         </div>
                         <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
@@ -332,13 +281,13 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                       {/* Precise Timestamp */}
                       <div
                         style={{
-                          background: "var(--bg-card)",
-                          padding: "0.75rem 1rem",
+                          background: "var(--bg-secondary)",
+                          padding: "0.85rem 1rem",
                           borderRadius: "var(--radius-md)",
                           border: "1px solid var(--border-subtle)",
                         }}
                       >
-                        <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginBottom: "0.2rem" }}>
+                        <div className="text-label" style={{ marginBottom: "0.25rem" }}>
                           Exact Timestamp
                         </div>
                         <div style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.85rem" }}>
@@ -349,14 +298,14 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                       {/* Authorized Service Center */}
                       <div
                         style={{
-                          background: "var(--bg-card)",
-                          padding: "0.75rem 1rem",
+                          background: "var(--bg-secondary)",
+                          padding: "0.85rem 1rem",
                           borderRadius: "var(--radius-md)",
                           border: "1px solid var(--border-subtle)",
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
-                          <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Service Center Wallet</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                          <span className="text-label">Service Center Wallet</span>
                           {scAddress && (
                             <button
                               onClick={() => handleCopy(scAddress, repair.id, "actor")}
@@ -378,7 +327,7 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                         <div style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.85rem", marginBottom: "0.15rem" }}>
                           {scName}
                         </div>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                        <div className="text-address" style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
                           {truncate(scAddress)}
                         </div>
                       </div>
@@ -386,14 +335,14 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                       {/* Blockchain Verification Badge */}
                       <div
                         style={{
-                          background: "var(--bg-card)",
-                          padding: "0.75rem 1rem",
+                          background: "var(--bg-secondary)",
+                          padding: "0.85rem 1rem",
                           borderRadius: "var(--radius-md)",
                           border: "1px solid var(--border-subtle)",
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
-                          <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Blockchain Proof</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                          <span className="text-label">Blockchain Proof</span>
                           {txHash && (
                             <button
                               onClick={() => handleCopy(txHash, repair.id, "tx")}
@@ -412,11 +361,11 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                             </button>
                           )}
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", color: "var(--status-success)", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--status-success)", fontSize: "0.85rem", fontWeight: 700 }}>
                           <LuShieldCheck /> Verified On-Chain
                         </div>
                         {txHash && (
-                          <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--accent-primary)", marginTop: "0.15rem" }}>
+                          <div className="text-hash" style={{ marginTop: "0.2rem" }}>
                             Tx: {truncate(txHash)}
                           </div>
                         )}
@@ -426,13 +375,13 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                     {/* Detailed Maintenance Notes Box */}
                     <div
                       style={{
-                        background: "var(--bg-card)",
-                        padding: "1rem 1.25rem",
+                        background: "var(--bg-secondary)",
+                        padding: "1.25rem",
                         borderRadius: "var(--radius-md)",
                         border: "1px solid var(--border-subtle)",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--text-muted)", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--text-muted)", fontSize: "0.8rem", fontWeight: 700, marginBottom: "0.5rem" }}>
                         <LuFileText style={{ color: "var(--status-warning)" }} /> Certified Maintenance Description & Service Notes
                       </div>
                       <div
@@ -441,8 +390,8 @@ export const PublicRepairHistory: React.FC<PublicRepairHistoryProps> = ({
                           fontSize: "0.9rem",
                           lineHeight: 1.6,
                           whiteSpace: "pre-wrap",
-                          background: "rgba(0, 0, 0, 0.25)",
-                          padding: "0.75rem 1rem",
+                          background: "rgba(0, 0, 0, 0.3)",
+                          padding: "0.85rem 1.15rem",
                           borderRadius: "var(--radius-sm)",
                           borderLeft: "3px solid var(--status-warning)",
                         }}

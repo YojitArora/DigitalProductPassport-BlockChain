@@ -71,7 +71,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        backgroundColor: "rgba(0, 0, 0, 0.85)",
         backdropFilter: "blur(6px)",
         display: "flex",
         alignItems: "center",
@@ -82,10 +82,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
       onClick={!isPending ? onClose : undefined}
     >
       <div
+        className="card-base"
         style={{
-          background: "var(--bg-secondary, #111827)",
-          border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))",
-          borderRadius: "var(--radius-lg, 16px)",
+          background: "var(--bg-secondary)",
+          border: "1px solid var(--border-default)",
+          borderRadius: "var(--radius-lg)",
           padding: "2.25rem 2rem",
           maxWidth: "440px",
           width: "100%",
@@ -124,7 +125,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
               ? "rgba(16, 185, 129, 0.15)"
               : isFailed
               ? "rgba(239, 68, 68, 0.15)"
-              : "rgba(99, 102, 241, 0.15)",
+              : "rgba(113, 135, 168, 0.15)",
             color: isConfirmed
               ? "var(--status-success)"
               : isFailed
@@ -140,7 +141,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
           style={{
             fontSize: "1.25rem",
             fontWeight: 700,
-            color: "var(--text-primary, #f9fafb)",
+            color: "#ffffff",
             marginBottom: "0.5rem",
           }}
         >
@@ -148,10 +149,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
         </h3>
 
         <p
+          className="text-secondary"
           style={{
-            color: "var(--text-secondary, #9ca3af)",
             fontSize: "0.9rem",
-            lineHeight: "1.5",
+            lineHeight: 1.5,
             marginBottom: "1.5rem",
           }}
         >
@@ -162,8 +163,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
           <div
             style={{
               padding: "0.6rem 0.75rem",
-              background: "var(--bg-card, #1f2937)",
-              borderRadius: "var(--radius-sm, 6px)",
+              background: "var(--bg-card)",
+              borderRadius: "var(--radius-sm)",
               border: "1px solid var(--border-subtle)",
               fontFamily: "var(--font-mono)",
               fontSize: "0.75rem",
@@ -183,14 +184,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
         {!isPending && (
           <button
             onClick={onClose}
+            className={isConfirmed ? "btn btn-primary" : "btn btn-secondary"}
             style={{
               width: "100%",
               padding: "0.75rem 1.5rem",
-              background: isConfirmed ? "var(--accent-primary)" : "var(--bg-card)",
-              color: "#ffffff",
-              border: isConfirmed ? "none" : "1px solid var(--border-subtle)",
-              borderRadius: "var(--radius-md)",
-              fontWeight: 600,
+              justifyContent: "center",
               fontSize: "0.95rem",
             }}
           >
@@ -198,13 +196,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ state, onClo
           </button>
         )}
       </div>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

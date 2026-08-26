@@ -3,7 +3,6 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useWallet } from "../hooks/useWallet";
 import {
-  LuShieldCheck,
   LuWallet,
   LuKey,
   LuCheck,
@@ -39,8 +38,8 @@ export const LoginPage: React.FC = () => {
   return (
     <div
       style={{
-        maxWidth: "540px",
-        margin: "3rem auto",
+        maxWidth: "520px",
+        margin: "3.5rem auto",
         padding: "0 1.5rem",
         display: "flex",
         flexDirection: "column",
@@ -54,67 +53,91 @@ export const LoginPage: React.FC = () => {
             display: "flex",
             alignItems: "center",
             gap: "0.75rem",
-            padding: "1rem 1.25rem",
-            background: "rgba(245, 158, 11, 0.12)",
-            border: "1px solid rgba(245, 158, 11, 0.3)",
+            padding: "0.85rem 1.15rem",
+            background: "var(--status-warning-tint)",
+            border: "1px solid rgba(245, 158, 11, 0.25)",
             borderRadius: "var(--radius-md)",
-            color: "var(--status-warning, #f59e0b)",
-            fontSize: "0.9rem",
+            color: "var(--status-warning)",
+            fontSize: "0.875rem",
           }}
         >
-          <LuLock style={{ fontSize: "1.25rem", flexShrink: 0 }} />
+          <LuLock style={{ fontSize: "1.15rem", flexShrink: 0 }} />
           <div>{flashMessage}</div>
         </div>
       )}
 
       {/* Main Authentication Card */}
       <div
+        className="card-base"
         style={{
-          background: "var(--bg-secondary, #111827)",
-          border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
-          borderRadius: "var(--radius-lg, 16px)",
-          padding: "2.5rem 2rem",
-          boxShadow: "var(--shadow-lg)",
+          background: "var(--bg-secondary)",
+          border: "1px solid var(--border-default)",
+          padding: "2.5rem 2.25rem",
           display: "flex",
           flexDirection: "column",
           gap: "1.75rem",
           textAlign: "center",
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--shadow-md)",
         }}
       >
-        {/* Shield Icon Header */}
+        {/* TraceLedger Brand Header */}
         <div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "1.25rem",
+            }}
+          >
+            <img
+              src="/traceledger-emblem.png"
+              alt="TraceLedger"
+              style={{
+                height: "56px",
+                width: "auto",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
+          </div>
+
           <div
             style={{
               display: "inline-flex",
               alignItems: "center",
-              justifyContent: "center",
-              width: "60px",
-              height: "60px",
-              borderRadius: "16px",
-              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%)",
-              border: "1px solid rgba(99, 102, 241, 0.3)",
-              color: "var(--accent-primary, #6366f1)",
-              fontSize: "30px",
-              marginBottom: "1rem",
+              gap: "0.4rem",
+              padding: "0.2rem 0.6rem",
+              background: "var(--bg-card)",
+              border: "1px solid rgba(113, 135, 168, 0.3)",
+              color: "var(--accent-primary)",
+              borderRadius: "var(--radius-sm)",
+              fontSize: "0.725rem",
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              marginBottom: "0.75rem",
             }}
           >
-            <LuShieldCheck />
+            Enterprise Web3 Infrastructure
           </div>
 
           <h2
             style={{
-              fontSize: "1.65rem",
+              fontSize: "1.75rem",
               fontWeight: 800,
-              color: "var(--text-primary, #f9fafb)",
+              color: "#ffffff",
               letterSpacing: "-0.02em",
               marginBottom: "0.4rem",
+              lineHeight: 1.2,
             }}
           >
-            Enterprise Access Portal
+            TraceLedger Access
           </h2>
 
-          <p style={{ color: "var(--text-secondary, #9ca3af)", fontSize: "0.9rem", lineHeight: 1.4 }}>
-            Authenticate using your Web3 wallet signature to access your authorized blockchain portals.
+          <p className="text-secondary" style={{ fontSize: "0.875rem", lineHeight: 1.55 }}>
+            Authenticate using your cryptographic Web3 wallet signature to access your authorized enterprise role portals.
           </p>
         </div>
 
@@ -123,25 +146,25 @@ export const LoginPage: React.FC = () => {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "0.6rem",
+            gap: "0.75rem",
             textAlign: "left",
-            background: "var(--bg-card, #1f2937)",
+            background: "var(--bg-card)",
             padding: "1rem 1.25rem",
             borderRadius: "var(--radius-md)",
             border: "1px solid var(--border-subtle)",
             fontSize: "0.825rem",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-primary)" }}>
-            <LuWallet style={{ color: "var(--accent-secondary)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", color: "var(--text-primary)" }}>
+            <LuWallet style={{ color: "var(--accent-primary)", fontSize: "1.1rem" }} />
             <span>1. Connect Web3 Wallet (MetaMask)</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-primary)" }}>
-            <LuKey style={{ color: "var(--accent-primary)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", color: "var(--text-primary)" }}>
+            <LuKey style={{ color: "var(--accent-primary)", fontSize: "1.1rem" }} />
             <span>2. Cryptographic Signature Verification</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--text-primary)" }}>
-            <LuCheck style={{ color: "var(--status-success)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.55rem", color: "var(--text-primary)" }}>
+            <LuCheck style={{ color: "var(--status-success)", fontSize: "1.1rem" }} />
             <span>3. Direct Smart Contract Role Authorization</span>
           </div>
         </div>
@@ -149,15 +172,14 @@ export const LoginPage: React.FC = () => {
         {/* Error Feedback */}
         {authError && (
           <div
+            className="card-danger"
             style={{
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
               padding: "0.75rem 1rem",
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
               borderRadius: "var(--radius-sm)",
-              color: "var(--status-danger, #ef4444)",
+              color: "var(--status-danger)",
               fontSize: "0.85rem",
               textAlign: "left",
             }}
@@ -173,17 +195,11 @@ export const LoginPage: React.FC = () => {
             href="https://metamask.io/download/"
             target="_blank"
             rel="noopener noreferrer"
+            className="btn btn-primary"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
               padding: "0.85rem 1.5rem",
-              background: "var(--accent-primary)",
-              color: "#ffffff",
-              borderRadius: "var(--radius-md)",
               fontSize: "0.95rem",
-              fontWeight: 600,
+              justifyContent: "center",
               textDecoration: "none",
             }}
           >
@@ -193,19 +209,11 @@ export const LoginPage: React.FC = () => {
           <button
             onClick={handleAuthenticate}
             disabled={isAuthenticating}
+            className="btn btn-primary"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
               padding: "0.85rem 1.5rem",
-              background: "var(--accent-primary)",
-              color: "#ffffff",
-              borderRadius: "var(--radius-md)",
-              fontSize: "1rem",
-              fontWeight: 600,
-              cursor: isAuthenticating ? "not-allowed" : "pointer",
-              opacity: isAuthenticating ? 0.7 : 1,
+              fontSize: "0.95rem",
+              justifyContent: "center",
             }}
           >
             {isAuthenticating ? (
@@ -223,7 +231,7 @@ export const LoginPage: React.FC = () => {
         )}
 
         {/* Public Verification Link */}
-        <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1rem", fontSize: "0.85rem" }}>
+        <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1.15rem", fontSize: "0.85rem" }}>
           <span style={{ color: "var(--text-secondary)" }}>Looking to inspect a product? </span>
           <Link
             to="/verify"
@@ -233,6 +241,7 @@ export const LoginPage: React.FC = () => {
               display: "inline-flex",
               alignItems: "center",
               gap: "0.25rem",
+              textDecoration: "none",
             }}
           >
             <LuSearch /> Public Verification Portal

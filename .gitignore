@@ -24,6 +24,7 @@ frontend/build/
 !.env.example
 frontend/.env
 frontend/.env.local
+!frontend/.env.example
 
 # Logs
 npm-debug.log*
@@ -41,3 +42,5 @@ Thumbs.db
 *.sublime-workspace
 *.swp
 *.swo
+.gemini/
+.agents/
