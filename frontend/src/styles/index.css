@@ -623,3 +623,50 @@ input, textarea, select {
     animation: none !important;
   }
 }
+
+/* ==========================================================================
+   VERTICAL SIDEBAR APPLICATION SHELL
+   ========================================================================== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  position: relative;
+}
+
+.main-content-area {
+  margin-left: 275px;
+  width: calc(100% - 275px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  overflow-x: hidden;
+}
+
+@media (max-width: 1024px) {
+  .mobile-top-bar {
+    display: flex !important;
+  }
+
+  .app-sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .mobile-close-btn {
+    display: block !important;
+  }
+
+  .main-content-area {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
