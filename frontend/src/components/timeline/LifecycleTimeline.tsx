@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Product, LedgerEvent, LedgerCategory } from "../../types";
 import { HistoryService } from "../../services/historyService";
 import { formatDateTime } from "../../utils/dateUtils";
@@ -15,6 +15,8 @@ import {
   LuX,
   LuLoader,
   LuHistory,
+  LuExternalLink,
+  LuSparkles,
 } from "react-icons/lu";
 
 interface LifecycleTimelineProps {
@@ -22,42 +24,85 @@ interface LifecycleTimelineProps {
   events?: LedgerEvent[];
 }
 
-const CATEGORY_COLORS: Record<LedgerCategory, { color: string; bg: string; border: string }> = {
+const CATEGORY_COLORS: Record<LedgerCategory, { color: string; bg: string; border: string; glow: string }> = {
   Manufacturing: {
     color: "var(--accent-primary, #6366f1)",
     bg: "rgba(99, 102, 241, 0.12)",
-    border: "rgba(99, 102, 241, 0.3)",
+    border: "rgba(99, 102, 241, 0.35)",
+    glow: "rgba(99, 102, 241, 0.4)",
   },
   Warranty: {
     color: "var(--status-success, #10b981)",
     bg: "rgba(16, 185, 129, 0.12)",
-    border: "rgba(16, 185, 129, 0.3)",
+    border: "rgba(16, 185, 129, 0.35)",
+    glow: "rgba(16, 185, 129, 0.4)",
   },
   Ownership: {
     color: "var(--status-info, #3b82f6)",
     bg: "rgba(59, 130, 246, 0.12)",
-    border: "rgba(59, 130, 246, 0.3)",
+    border: "rgba(59, 130, 246, 0.35)",
+    glow: "rgba(59, 130, 246, 0.4)",
   },
   Custody: {
     color: "var(--accent-secondary, #06b6d4)",
     bg: "rgba(6, 182, 212, 0.12)",
-    border: "rgba(6, 182, 212, 0.3)",
+    border: "rgba(6, 182, 212, 0.35)",
+    glow: "rgba(6, 182, 212, 0.4)",
   },
   Service: {
     color: "var(--status-warning, #f59e0b)",
     bg: "rgba(245, 158, 11, 0.12)",
-    border: "rgba(245, 158, 11, 0.3)",
+    border: "rgba(245, 158, 11, 0.35)",
+    glow: "rgba(245, 158, 11, 0.4)",
   },
   Security: {
     color: "var(--status-danger, #ef4444)",
     bg: "rgba(239, 68, 68, 0.15)",
     border: "rgba(239, 68, 68, 0.35)",
+    glow: "rgba(239, 68, 68, 0.4)",
   },
   Certification: {
     color: "#a855f7",
     bg: "rgba(168, 85, 247, 0.12)",
-    border: "rgba(168, 85, 247, 0.3)",
+    border: "rgba(168, 85, 247, 0.35)",
+    glow: "rgba(168, 85, 247, 0.4)",
   },
+};
+
+/**
+ * Generates the smooth continuous WAVY / CURVED vertical line passing through the ● nodes.
+ * ViewBox: 0 0 60 1000
+ * Nodes alternate gently between X=24 (Left-side event) and X=36 (Right-side event)
+ */
+const generateWavyPath = (count: number): string => {
+  if (count <= 0) return "M 30 0 L 30 1000";
+  if (count === 1) return "M 30 0 L 30 1000";
+
+  const step = 1000 / count;
+  const nodes = Array.from({ length: count }, (_, i) => ({
+    x: i % 2 === 0 ? 24 : 36,
+    y: i * step + step * 0.5,
+  }));
+
+  const segments: string[] = [`M ${nodes[0].x} 0 L ${nodes[0].x} ${nodes[0].y}`];
+
+  for (let i = 0; i < count - 1; i++) {
+    const curr = nodes[i];
+    const next = nodes[i + 1];
+    const dy = next.y - curr.y;
+
+    const cp1x = curr.x;
+    const cp1y = curr.y + dy * 0.5;
+    const cp2x = next.x;
+    const cp2y = next.y - dy * 0.5;
+
+    segments.push(`C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`);
+  }
+
+  const last = nodes[count - 1];
+  segments.push(`L ${last.x} 1000`);
+
+  return segments.join(" ");
 };
 
 export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, events: propEvents }) => {
@@ -67,6 +112,13 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
   const [activeModalEvent, setActiveModalEvent] = useState<LedgerEvent | null>(null);
   const [copiedTx, setCopiedTx] = useState<boolean>(false);
   const [copiedActor, setCopiedActor] = useState<boolean>(false);
+
+  // Active events set (indices currently reached by scroll)
+  const [activeIndices, setActiveIndices] = useState<Set<number>>(new Set([0]));
+  const timelineRootRef = useRef<HTMLDivElement | null>(null);
+  const activePathRef = useRef<SVGPathElement | null>(null);
+  const mobileFillRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const loadLedger = useCallback(async () => {
     if (propEvents) {
@@ -95,6 +147,100 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
     if (selectedCategory === "All") return true;
     return evt.category === selectedCategory;
   });
+
+  const wavyPathD = useMemo(() => {
+    return generateWavyPath(filteredEvents.length);
+  }, [filteredEvents.length]);
+
+  const isReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Fully continuous bidirectional scroll synchronization
+  useEffect(() => {
+    if (isReducedMotion) {
+      if (activePathRef.current) activePathRef.current.style.strokeDashoffset = "0";
+      if (mobileFillRef.current) mobileFillRef.current.style.height = "100%";
+      setActiveIndices(new Set(filteredEvents.map((_, i) => i)));
+      return;
+    }
+
+    let ticking = false;
+
+    const updateTimelineProgress = () => {
+      const rootEl = timelineRootRef.current;
+      if (!rootEl) return;
+
+      const rect = rootEl.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+      // Viewport trigger line (approx 65% down from top of viewport)
+      const triggerY = viewportHeight * 0.65;
+      const totalHeight = rect.height;
+      if (totalHeight <= 0) return;
+
+      // Calculate progress between 0 and 1 continuously
+      const distanceIntoTimeline = triggerY - rect.top;
+      const progress = Math.max(0, Math.min(1, distanceIntoTimeline / totalHeight));
+
+      // Direct physical DOM update for instantaneous zero-lag response during scrolling
+      if (activePathRef.current) {
+        activePathRef.current.style.strokeDashoffset = `${1000 * (1 - progress)}`;
+      }
+      if (mobileFillRef.current) {
+        mobileFillRef.current.style.height = `${progress * 100}%`;
+      }
+
+      // Determine active indices based on current scroll position
+      const newActive = new Set<number>();
+
+      // Keep event 0 active when top of timeline enters viewport
+      if (rect.top <= viewportHeight * 0.85) {
+        newActive.add(0);
+      }
+
+      filteredEvents.forEach((_, idx) => {
+        const itemEl = itemRefs.current[idx];
+        if (itemEl) {
+          const itemRect = itemEl.getBoundingClientRect();
+          // Active when event item's upper section has passed triggerY
+          if (itemRect.top + itemRect.height * 0.25 <= triggerY) {
+            newActive.add(idx);
+          }
+        }
+      });
+
+      // Update state only when active set changes to avoid re-rendering cards unnecessarily
+      setActiveIndices((prev) => {
+        if (prev.size === newActive.size && Array.from(newActive).every((val) => prev.has(val))) {
+          return prev;
+        }
+        return newActive;
+      });
+    };
+
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          updateTimelineProgress();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+
+    // Initial calculation on mount
+    updateTimelineProgress();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [filteredEvents, isReducedMotion]);
 
   const getEventIcon = (evt: LedgerEvent) => {
     switch (evt.type) {
@@ -137,43 +283,68 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
     <div
       style={{
         background: "var(--bg-secondary, #111827)",
-        border: "1px solid var(--border-subtle)",
+        border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
         borderRadius: "var(--radius-lg, 16px)",
-        padding: "1.75rem",
-        boxShadow: "var(--shadow-md)",
+        padding: "2rem 1.5rem",
+        boxShadow: "var(--shadow-lg)",
+        position: "relative",
       }}
     >
-      {/* Ledger Header & Category Filters */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "36px",
-              height: "36px",
-              borderRadius: "8px",
-              background: "rgba(99, 102, 241, 0.12)",
-              color: "var(--accent-primary, #6366f1)",
-              fontSize: "18px",
-            }}
-          >
-            <LuHistory />
-          </div>
+      {/* Product History Section Header */}
+      <div style={{ marginBottom: "2rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
           <div>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              Product History Ledger
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.25rem 0.65rem", background: "rgba(99, 102, 241, 0.12)", color: "var(--accent-primary, #6366f1)", borderRadius: "var(--radius-sm)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+              <LuSparkles /> Chronological Audit Ledger
+            </div>
+            <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+              Complete Product History
             </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.825rem" }}>
-              Verifiable, immutable chronological audit trail recorded on Ethereum blockchain ({events.length} total events)
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: "0.25rem", maxWidth: "620px" }}>
+              The immutable, cryptographically-proven historical lifecycle of this Digital Product Passport. Every manufacturing, custody, warranty, service, and security event is permanently recorded on the blockchain.
             </p>
+          </div>
+
+          {/* DPP ID & Total Events Pill */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.4rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 700,
+                  fontSize: "0.85rem",
+                  color: "var(--accent-secondary, #06b6d4)",
+                  background: "rgba(6, 182, 212, 0.12)",
+                  border: "1px solid rgba(6, 182, 212, 0.3)",
+                  padding: "0.25rem 0.6rem",
+                  borderRadius: "var(--radius-sm)",
+                }}
+              >
+                {product.dppId || `Passport #${product.passportId.toString()}`}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  color: "var(--text-muted)",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  padding: "0.25rem 0.55rem",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border-subtle)",
+                }}
+              >
+                {events.length} {events.length === 1 ? "Event" : "Historical Events"}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Filter Pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexWrap: "wrap" }}>
-          <LuFilter style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginRight: "0.2rem" }} />
+        {/* Category Filter Pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap", borderTop: "1px solid var(--border-subtle)", paddingTop: "1rem" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", color: "var(--text-muted)", fontSize: "0.8rem", fontWeight: 600, marginRight: "0.25rem" }}>
+            <LuFilter /> Filter:
+          </span>
           {categories.map((cat) => {
             const isActive = selectedCategory === cat;
             return (
@@ -181,12 +352,12 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 style={{
-                  padding: "0.3rem 0.65rem",
+                  padding: "0.35rem 0.75rem",
                   borderRadius: "var(--radius-sm)",
                   border: isActive ? "1px solid var(--accent-primary)" : "1px solid var(--border-subtle)",
                   background: isActive ? "var(--accent-primary)" : "var(--bg-card)",
                   color: isActive ? "#ffffff" : "var(--text-secondary)",
-                  fontSize: "0.75rem",
+                  fontSize: "0.8rem",
                   fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
@@ -201,144 +372,350 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
 
       {/* Loading State */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--text-secondary)" }}>
-          <LuLoader style={{ animation: "spin 1.5s linear infinite", fontSize: "2rem", color: "var(--accent-primary)", marginBottom: "0.5rem" }} />
-          <div>Reconstructing immutable blockchain history ledger...</div>
+        <div style={{ textAlign: "center", padding: "4rem 1rem", color: "var(--text-secondary)" }}>
+          <LuLoader style={{ animation: "spin 1.5s linear infinite", fontSize: "2.25rem", color: "var(--accent-primary)", marginBottom: "0.75rem" }} />
+          <div style={{ fontWeight: 600 }}>Reconstructing chronological event history ledger...</div>
         </div>
       ) : filteredEvents.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "2.5rem 1rem", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+        <div style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--text-muted)", fontSize: "0.9rem" }}>
           No historical events found for the "{selectedCategory}" category filter.
         </div>
       ) : (
-        /* Chronological Event Ledger Timeline */
-        <div style={{ position: "relative", paddingLeft: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {/* Vertical Connecting Guide Line */}
+        /* 
+          Timeline Container:
+          LEFT EVENT:  [LEFT CARD] ───── ● ───── [ICON]
+          RIGHT EVENT: [ICON] ───── ● ───── [RIGHT CARD]
+        */
+        <div
+          ref={timelineRootRef}
+          className="product-history-timeline-root"
+          style={{ position: "relative", width: "100%", padding: "1.5rem 0" }}
+        >
+          {/* Responsive CSS styles */}
+          <style>{`
+            @media (min-width: 768px) {
+              .timeline-row {
+                display: grid;
+                grid-template-columns: 1fr 60px 1fr;
+                align-items: center;
+                gap: 0;
+                margin-bottom: 3.5rem;
+                position: relative;
+                width: 100%;
+              }
+              .timeline-left-col {
+                grid-column: 1;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 0;
+                width: 100%;
+              }
+              .timeline-center-col {
+                grid-column: 2;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: relative;
+                z-index: 2;
+                width: 60px;
+                height: 100%;
+              }
+              .timeline-right-col {
+                grid-column: 3;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 0;
+                width: 100%;
+              }
+              .timeline-spine-svg {
+                display: block;
+              }
+              .timeline-mobile-line {
+                display: none;
+              }
+              .timeline-mobile-node {
+                display: none;
+              }
+            }
+
+            @media (max-width: 767px) {
+              .timeline-row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 2.25rem;
+                position: relative;
+                padding-left: 2.25rem;
+              }
+              .timeline-left-col, .timeline-right-col {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                width: 100%;
+              }
+              .timeline-center-col {
+                display: none;
+              }
+              .timeline-spine-svg {
+                display: none;
+              }
+              .timeline-mobile-line {
+                display: block;
+                position: absolute;
+                left: 10px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                background: transparent;
+                z-index: 0;
+                overflow: hidden;
+              }
+              .timeline-mobile-node {
+                display: block;
+                position: absolute;
+                left: 4px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 2;
+                transition: opacity 0.4s ease, transform 0.4s ease;
+              }
+            }
+          `}</style>
+
+          {/* Desktop Central Smooth Wavy Spine (SVG) - ONLY revealed animated path, ZERO future/dotted line */}
           <div
+            className="timeline-spine-svg"
             style={{
               position: "absolute",
-              top: "14px",
-              bottom: "14px",
-              left: "14px",
-              width: "2px",
-              background: "var(--border-subtle, #374151)",
-              zIndex: 0,
+              top: "0px",
+              bottom: "0px",
+              left: "50%",
+              width: "60px",
+              transform: "translateX(-50%)",
+              zIndex: 1,
+              pointerEvents: "none",
             }}
-          />
+          >
+            <svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 60 1000"
+              preserveAspectRatio="none"
+              style={{ overflow: "visible" }}
+            >
+              <defs>
+                <linearGradient id="wavyGlowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#818cf8" stopOpacity="0.95" />
+                  <stop offset="35%" stopColor="#06b6d4" stopOpacity="0.95" />
+                  <stop offset="70%" stopColor="#10b981" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#a855f7" stopOpacity="0.95" />
+                </linearGradient>
+              </defs>
 
+              {/* Foreground active glowing wavy path revealed progressively with scroll */}
+              <path
+                ref={activePathRef}
+                d={wavyPathD}
+                fill="none"
+                stroke="url(#wavyGlowGradient)"
+                strokeWidth="3.5"
+                pathLength="1000"
+                strokeDasharray="1000"
+                strokeDashoffset="1000"
+                style={{
+                  filter: "drop-shadow(0 0 6px rgba(99, 102, 241, 0.8)) drop-shadow(0 0 12px rgba(6, 182, 212, 0.4))",
+                }}
+              />
+            </svg>
+          </div>
+
+          {/* Mobile Vertical Track updated directly in sync with scroll position */}
+          <div className="timeline-mobile-line">
+            <div
+              ref={mobileFillRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "0%",
+                background: "linear-gradient(180deg, #6366f1 0%, #06b6d4 50%, #10b981 100%)",
+                borderRadius: "2px",
+                boxShadow: "0 0 6px rgba(99, 102, 241, 0.6)",
+              }}
+            />
+          </div>
+
+          {/* Render All Chronological Events */}
           {filteredEvents.map((evt, idx) => {
+            const isEven = idx % 2 === 0;
+            const isActive = isReducedMotion || activeIndices.has(idx);
             const catStyle = CATEGORY_COLORS[evt.category] || CATEGORY_COLORS.Manufacturing;
 
             return (
               <div
                 key={evt.id || idx}
-                onClick={() => setActiveModalEvent(evt)}
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "1rem",
-                  cursor: "pointer",
-                }}
+                ref={(el) => (itemRefs.current[idx] = el)}
+                data-event-index={idx}
+                className="timeline-row"
               >
-                {/* Node Dot / Icon Badge */}
+                {/* Mobile Dot Node */}
                 <div
+                  className="timeline-mobile-node"
                   style={{
-                    position: "absolute",
-                    left: "-1.75rem",
-                    width: "30px",
-                    height: "30px",
+                    width: "14px",
+                    height: "14px",
                     borderRadius: "50%",
-                    background: catStyle.bg,
-                    border: `2px solid ${catStyle.color}`,
-                    color: catStyle.color,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "14px",
-                    boxShadow: "0 0 10px rgba(0, 0, 0, 0.4)",
-                    flexShrink: 0,
+                    background: catStyle.color,
+                    border: "2px solid #ffffff",
+                    boxShadow: `0 0 10px ${catStyle.glow}`,
+                    opacity: isActive ? 1 : 0,
+                    transform: isActive ? "translateY(-50%) scale(1)" : "translateY(-50%) scale(0.4)",
+                    transition: "opacity 0.4s ease, transform 0.4s ease",
                   }}
-                >
-                  {getEventIcon(evt)}
+                />
+
+                {/* 
+                  LEFT COLUMN:
+                  - If Even index (Left Event): [LEFT CARD] ─────
+                  - If Odd index (Right Event): ───── [ICON] (facing timeline)
+                */}
+                <div className="timeline-left-col">
+                  {isEven ? (
+                    /* Left Event Card with connector to central node */
+                    <div
+                      className={`timeline-card-left ${isActive ? "timeline-card-revealed" : ""}`}
+                      style={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "flex-end" }}
+                    >
+                      <div style={{ flex: 1, maxWidth: "430px" }}>
+                        <EventCardContent
+                          evt={evt}
+                          catStyle={catStyle}
+                          onInspect={() => setActiveModalEvent(evt)}
+                          truncate={truncate}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "2px",
+                          background: catStyle.border,
+                          flexShrink: 0,
+                          opacity: isActive ? 1 : 0,
+                          transition: "opacity 0.4s ease",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    /* Right Event: Opposite Icon on the LEFT of the timeline */
+                    <div
+                      className={`timeline-card-left ${isActive ? "timeline-card-revealed" : ""}`}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}
+                    >
+                      <EventIconBadge
+                        evt={evt}
+                        catStyle={catStyle}
+                        isActive={isActive}
+                        onInspect={() => setActiveModalEvent(evt)}
+                        getEventIcon={getEventIcon}
+                      />
+                      <div
+                        style={{
+                          width: "28px",
+                          height: "2px",
+                          background: catStyle.border,
+                          flexShrink: 0,
+                          opacity: isActive ? 1 : 0,
+                          transition: "opacity 0.4s ease",
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {/* Event Card Content */}
-                <div
-                  style={{
-                    flex: 1,
-                    background: "var(--bg-card, #1f2937)",
-                    border: "1px solid var(--border-subtle)",
-                    borderRadius: "var(--radius-md)",
-                    padding: "1rem 1.25rem",
-                    transition: "transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = catStyle.color;
-                    e.currentTarget.style.boxShadow = "var(--shadow-md)";
-                    e.currentTarget.style.transform = "translateX(4px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border-subtle)";
-                    e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.transform = "translateX(0px)";
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.4rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <span
+                {/* 
+                  CENTER COLUMN:
+                  Timeline Node ● situated directly on the wavy vertical timeline
+                */}
+                <div className="timeline-center-col">
+                  <div
+                    onClick={() => setActiveModalEvent(evt)}
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "50%",
+                      background: catStyle.color,
+                      border: "2.5px solid #ffffff",
+                      boxShadow: `0 0 14px ${catStyle.glow}, 0 0 4px #ffffff`,
+                      cursor: "pointer",
+                      opacity: isActive ? 1 : 0,
+                      transform: isEven
+                        ? `translateX(-6px) scale(${isActive ? 1 : 0.4})`
+                        : `translateX(6px) scale(${isActive ? 1 : 0.4})`,
+                      transition: "opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease",
+                      flexShrink: 0,
+                    }}
+                    title={`${evt.title} - Timeline node`}
+                  />
+                </div>
+
+                {/* 
+                  RIGHT COLUMN:
+                  - If Even index (Left Event): ───── [ICON] (Opposite Icon on the RIGHT)
+                  - If Odd index (Right Event): ───── [RIGHT CARD]
+                */}
+                <div className="timeline-right-col">
+                  {isEven ? (
+                    /* Left Event: Opposite Icon on the RIGHT of the timeline */
+                    <div
+                      className={`timeline-card-right ${isActive ? "timeline-card-revealed" : ""}`}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "flex-start" }}
+                    >
+                      <div
                         style={{
-                          fontSize: "0.7rem",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          padding: "0.15rem 0.45rem",
-                          borderRadius: "var(--radius-sm)",
-                          color: catStyle.color,
-                          background: catStyle.bg,
-                          border: `1px solid ${catStyle.border}`,
-                          letterSpacing: "0.03em",
+                          width: "28px",
+                          height: "2px",
+                          background: catStyle.border,
+                          flexShrink: 0,
+                          opacity: isActive ? 1 : 0,
+                          transition: "opacity 0.4s ease",
                         }}
-                      >
-                        {evt.category}
-                      </span>
-                      <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                        {evt.title}
-                      </h4>
+                      />
+                      <EventIconBadge
+                        evt={evt}
+                        catStyle={catStyle}
+                        isActive={isActive}
+                        onInspect={() => setActiveModalEvent(evt)}
+                        getEventIcon={getEventIcon}
+                      />
                     </div>
-
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-                      {formatDateTime(evt.timestamp)}
-                    </div>
-                  </div>
-
-                  {evt.subtitle && (
-                    <div style={{ fontSize: "0.825rem", color: "var(--text-secondary)", marginBottom: "0.4rem", fontWeight: 500 }}>
-                      {evt.subtitle}
+                  ) : (
+                    /* Right Event Card with connector from central node */
+                    <div
+                      className={`timeline-card-right ${isActive ? "timeline-card-revealed" : ""}`}
+                      style={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "flex-start" }}
+                    >
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "2px",
+                          background: catStyle.border,
+                          flexShrink: 0,
+                          opacity: isActive ? 1 : 0,
+                          transition: "opacity 0.4s ease",
+                        }}
+                      />
+                      <div style={{ flex: 1, maxWidth: "430px" }}>
+                        <EventCardContent
+                          evt={evt}
+                          catStyle={catStyle}
+                          onInspect={() => setActiveModalEvent(evt)}
+                          truncate={truncate}
+                        />
+                      </div>
                     </div>
                   )}
-
-                  {evt.description && (
-                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.4, marginBottom: "0.5rem" }}>
-                      {evt.description}
-                    </div>
-                  )}
-
-                  {/* Footer metadata chips */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", fontSize: "0.75rem", color: "var(--text-muted)", borderTop: "1px solid var(--border-subtle)", paddingTop: "0.5rem", marginTop: "0.5rem" }}>
-                    {evt.actor && (
-                      <div>
-                        <strong>Actor:</strong> {evt.actorRole ? `[${evt.actorRole}] ` : ""}{truncate(evt.actor)}
-                      </div>
-                    )}
-                    {evt.transactionHash && (
-                      <div style={{ fontFamily: "var(--font-mono)" }}>
-                        <strong>Tx:</strong> {truncate(evt.transactionHash)}
-                      </div>
-                    )}
-                    <div style={{ marginLeft: "auto", color: "var(--accent-primary)", fontWeight: 600, fontSize: "0.75rem" }}>
-                      View Details →
-                    </div>
-                  </div>
                 </div>
               </div>
             );
@@ -354,7 +731,7 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
             inset: 0,
             zIndex: 1200,
             background: "rgba(0, 0, 0, 0.75)",
-            backdropFilter: "blur(6px)",
+            backdropFilter: "blur(8px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -368,139 +745,357 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
               border: "1px solid var(--border-subtle)",
               borderRadius: "var(--radius-lg, 16px)",
               padding: "2rem",
-              maxWidth: "540px",
+              maxWidth: "560px",
               width: "100%",
               boxShadow: "var(--shadow-xl)",
               display: "flex",
               flexDirection: "column",
               gap: "1.25rem",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <span
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <div
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    padding: "0.2rem 0.5rem",
-                    borderRadius: "var(--radius-sm)",
-                    color: CATEGORY_COLORS[activeModalEvent.category]?.color || "var(--accent-primary)",
-                    background: CATEGORY_COLORS[activeModalEvent.category]?.bg || "rgba(99, 102, 241, 0.12)",
+                    width: "42px",
+                    height: "42px",
+                    borderRadius: "10px",
+                    background: CATEGORY_COLORS[activeModalEvent.category]?.bg || "rgba(99,102,241,0.12)",
                     border: `1px solid ${CATEGORY_COLORS[activeModalEvent.category]?.border || "transparent"}`,
+                    color: CATEGORY_COLORS[activeModalEvent.category]?.color || "var(--accent-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "20px",
+                    flexShrink: 0,
                   }}
                 >
-                  {activeModalEvent.category} Event
-                </span>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", marginTop: "0.5rem" }}>
-                  {activeModalEvent.title}
-                </h3>
+                  {getEventIcon(activeModalEvent)}
+                </div>
+                <div>
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      color: CATEGORY_COLORS[activeModalEvent.category]?.color || "var(--accent-primary)",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {activeModalEvent.category} Event
+                  </span>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    {activeModalEvent.title}
+                  </h3>
+                </div>
               </div>
 
               <button
                 onClick={() => setActiveModalEvent(null)}
-                style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "1.2rem", cursor: "pointer" }}
+                style={{
+                  color: "var(--text-muted)",
+                  fontSize: "1.25rem",
+                  padding: "0.25rem",
+                  cursor: "pointer",
+                  borderRadius: "var(--radius-sm)",
+                }}
+                aria-label="Close modal"
               >
                 <LuX />
               </button>
             </div>
 
-            {/* Event Timestamp */}
-            <div style={{ background: "var(--bg-card)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)", fontSize: "0.85rem" }}>
-              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Block Timestamp</div>
-              <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                {formatDateTime(activeModalEvent.timestamp)}
-              </div>
-            </div>
-
-            {/* Description / Subtitle */}
+            {/* Description & Subtitle */}
             <div>
-              <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginBottom: "0.2rem" }}>Event Description</div>
-              <div style={{ color: "var(--text-secondary)", fontSize: "0.875rem", lineHeight: 1.5, background: "var(--bg-card)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                {activeModalEvent.description || activeModalEvent.subtitle || "No additional event details provided."}
+              {activeModalEvent.subtitle && (
+                <div style={{ fontSize: "0.9rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.4rem" }}>
+                  {activeModalEvent.subtitle}
+                </div>
+              )}
+              <div style={{ fontSize: "0.85rem", color: "var(--text-primary)", lineHeight: 1.5 }}>
+                {activeModalEvent.description}
               </div>
             </div>
 
-            {/* Event Participants & Actor */}
-            {activeModalEvent.actor && (
-              <div style={{ background: "var(--bg-card)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                    Verified Actor {activeModalEvent.actorRole ? `(${activeModalEvent.actorRole})` : ""}
-                  </span>
-                  <button
-                    onClick={() => handleCopy(activeModalEvent.actor || "", "actor")}
-                    style={{ background: "transparent", border: "none", color: copiedActor ? "var(--status-success)" : "var(--text-muted)", fontSize: "0.75rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.2rem" }}
-                  >
-                    {copiedActor ? <LuCheck /> : <LuCopy />} {copiedActor ? "Copied" : "Copy"}
-                  </button>
-                </div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--text-primary)", wordBreak: "break-all" }}>
-                  {activeModalEvent.actor}
-                </div>
-              </div>
-            )}
-
-            {/* Previous Entity / New Entity if present */}
-            {(activeModalEvent.previousEntity || activeModalEvent.newEntity) && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", fontSize: "0.8rem" }}>
-                {activeModalEvent.previousEntity && (
-                  <div style={{ background: "var(--bg-card)", padding: "0.6rem 0.8rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                    <div style={{ color: "var(--text-muted)", fontSize: "0.7rem" }}>From</div>
-                    <div style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
-                      {truncate(activeModalEvent.previousEntity)}
-                    </div>
-                  </div>
-                )}
-                {activeModalEvent.newEntity && (
-                  <div style={{ background: "var(--bg-card)", padding: "0.6rem 0.8rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                    <div style={{ color: "var(--text-muted)", fontSize: "0.7rem" }}>To / Custody</div>
-                    <div style={{ fontFamily: "var(--font-mono)", color: "var(--status-success)" }}>
-                      {truncate(activeModalEvent.newEntity)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Blockchain Transaction Hash */}
-            {activeModalEvent.transactionHash && (
-              <div style={{ background: "var(--bg-card)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Blockchain Transaction Hash</span>
-                  <button
-                    onClick={() => handleCopy(activeModalEvent.transactionHash || "", "tx")}
-                    style={{ background: "transparent", border: "none", color: copiedTx ? "var(--status-success)" : "var(--text-muted)", fontSize: "0.75rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.2rem" }}
-                  >
-                    {copiedTx ? <LuCheck /> : <LuCopy />} {copiedTx ? "Copied" : "Copy"}
-                  </button>
-                </div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--accent-primary)", wordBreak: "break-all" }}>
-                  {activeModalEvent.transactionHash}
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setActiveModalEvent(null)}
+            {/* Structured Properties Grid */}
+            <div
               style={{
-                width: "100%",
-                padding: "0.75rem",
                 background: "var(--bg-card)",
-                color: "var(--text-primary)",
-                border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-md)",
-                fontWeight: 600,
-                cursor: "pointer",
+                border: "1px solid var(--border-subtle)",
+                padding: "1rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+                fontSize: "0.85rem",
               }}
             >
-              Close Ledger Details
-            </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "var(--text-muted)" }}>Timestamp</span>
+                <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)", fontWeight: 600 }}>
+                  {formatDateTime(activeModalEvent.timestamp)}
+                </span>
+              </div>
+
+              {activeModalEvent.actor && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "var(--text-muted)" }}>
+                    {activeModalEvent.actorRole || "Executing Actor"}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+                      {truncate(activeModalEvent.actor)}
+                    </span>
+                    <button
+                      onClick={() => handleCopy(activeModalEvent.actor || "", "actor")}
+                      style={{ color: copiedActor ? "var(--status-success)" : "var(--text-muted)", cursor: "pointer", fontSize: "0.9rem" }}
+                      title="Copy full address"
+                    >
+                      {copiedActor ? <LuCheck /> : <LuCopy />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeModalEvent.newEntity && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "var(--text-muted)" }}>Recipient / Transferee</span>
+                  <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+                    {truncate(activeModalEvent.newEntity)}
+                  </span>
+                </div>
+              )}
+
+              {activeModalEvent.blockNumber !== undefined && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "var(--text-muted)" }}>Block Number</span>
+                  <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+                    #{activeModalEvent.blockNumber.toString()}
+                  </span>
+                </div>
+              )}
+
+              {activeModalEvent.transactionHash && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "var(--text-muted)" }}>Transaction Hash</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+                      {truncate(activeModalEvent.transactionHash)}
+                    </span>
+                    <button
+                      onClick={() => handleCopy(activeModalEvent.transactionHash || "", "tx")}
+                      style={{ color: copiedTx ? "var(--status-success)" : "var(--text-muted)", cursor: "pointer", fontSize: "0.9rem" }}
+                      title="Copy transaction hash"
+                    >
+                      {copiedTx ? <LuCheck /> : <LuCopy />}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Event Metadata (if any) */}
+            {activeModalEvent.metadata && Object.keys(activeModalEvent.metadata).length > 0 && (
+              <div
+                style={{
+                  background: "var(--bg-card)",
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border-subtle)",
+                  padding: "1rem",
+                }}
+              >
+                <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+                  Event Specific Metadata
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", fontSize: "0.8rem" }}>
+                  {Object.entries(activeModalEvent.metadata).map(([key, val]) => (
+                    <div key={key}>
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "capitalize" }}>
+                        {key.replace(/([A-Z])/g, " $1")}
+                      </div>
+                      <div style={{ color: "var(--text-primary)", fontWeight: 600, fontFamily: "var(--font-mono)" }}>
+                        {String(val)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+              <button
+                onClick={() => setActiveModalEvent(null)}
+                style={{
+                  padding: "0.6rem 1.25rem",
+                  background: "var(--accent-primary)",
+                  color: "#ffffff",
+                  borderRadius: "var(--radius-md)",
+                  fontWeight: 600,
+                  fontSize: "0.85rem",
+                }}
+              >
+                Close Inspector
+              </button>
+            </div>
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+interface EventIconBadgeProps {
+  evt: LedgerEvent;
+  catStyle: { color: string; bg: string; border: string; glow: string };
+  isActive: boolean;
+  onInspect: () => void;
+  getEventIcon: (evt: LedgerEvent) => React.ReactNode;
+}
+
+const EventIconBadge: React.FC<EventIconBadgeProps> = ({
+  evt,
+  catStyle,
+  isActive,
+  onInspect,
+  getEventIcon,
+}) => {
+  return (
+    <div
+      onClick={onInspect}
+      style={{
+        width: "44px",
+        height: "44px",
+        borderRadius: "50%",
+        background: isActive ? catStyle.bg : "transparent",
+        border: `2px solid ${isActive ? catStyle.color : "transparent"}`,
+        color: isActive ? catStyle.color : "transparent",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "20px",
+        cursor: "pointer",
+        boxShadow: isActive ? `0 0 16px ${catStyle.glow}` : "none",
+        opacity: isActive ? 1 : 0,
+        transform: isActive ? "scale(1)" : "scale(0.5)",
+        transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        flexShrink: 0,
+      }}
+      title={`${evt.title} - Click to inspect`}
+    >
+      {getEventIcon(evt)}
+    </div>
+  );
+};
+
+interface EventCardContentProps {
+  evt: LedgerEvent;
+  catStyle: { color: string; bg: string; border: string; glow: string };
+  onInspect: () => void;
+  truncate: (addr?: string) => string;
+}
+
+const EventCardContent: React.FC<EventCardContentProps> = ({
+  evt,
+  catStyle,
+  onInspect,
+  truncate,
+}) => {
+  return (
+    <div
+      onClick={onInspect}
+      style={{
+        background: "var(--bg-card, #1f2937)",
+        border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
+        borderRadius: "var(--radius-md, 12px)",
+        padding: "1.25rem",
+        boxShadow: "var(--shadow-md)",
+        cursor: "pointer",
+        transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
+        position: "relative",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = catStyle.color;
+        e.currentTarget.style.boxShadow = `0 4px 16px ${catStyle.glow}`;
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border-subtle, rgba(255, 255, 255, 0.08))";
+        e.currentTarget.style.boxShadow = "var(--shadow-md)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      {/* Top Bar: Category Pill & Formatted Timestamp */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.4rem" }}>
+        <span
+          style={{
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            padding: "0.2rem 0.5rem",
+            borderRadius: "var(--radius-sm)",
+            color: catStyle.color,
+            background: catStyle.bg,
+            border: `1px solid ${catStyle.border}`,
+            letterSpacing: "0.03em",
+          }}
+        >
+          {evt.category}
+        </span>
+
+        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+          {formatDateTime(evt.timestamp)}
+        </div>
+      </div>
+
+      {/* Title & Subtitle */}
+      <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.2rem" }}>
+        {evt.title}
+      </h3>
+
+      {evt.subtitle && (
+        <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 500, marginBottom: "0.4rem" }}>
+          {evt.subtitle}
+        </div>
+      )}
+
+      {evt.description && (
+        <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.45, marginBottom: "0.75rem" }}>
+          {evt.description}
+        </p>
+      )}
+
+      {/* Footer Info: Actor & Blockchain Verification Tag */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "0.5rem",
+          borderTop: "1px solid var(--border-subtle)",
+          paddingTop: "0.6rem",
+          fontSize: "0.75rem",
+          color: "var(--text-muted)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+          {evt.actor && (
+            <span>
+              <strong>{evt.actorRole ? `${evt.actorRole}: ` : "Actor: "}</strong>
+              <span style={{ fontFamily: "var(--font-mono)" }}>{truncate(evt.actor)}</span>
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", color: "var(--accent-primary)", fontWeight: 600 }}>
+          Inspect <LuExternalLink />
+        </div>
+      </div>
     </div>
   );
 };

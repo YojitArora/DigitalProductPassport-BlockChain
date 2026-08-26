@@ -109,3 +109,76 @@ input, textarea, select {
     transform: rotate(360deg);
   }
 }
+
+/* Timeline Node Halo Pulse */
+@keyframes nodePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+/* Product History Ledger Scroll Container */
+.product-history-timeline-root {
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.product-history-timeline-root::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Timeline Animation Styles */
+.timeline-card-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: opacity, transform;
+}
+
+.timeline-card-right {
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: opacity, transform;
+}
+
+.timeline-card-mobile {
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: opacity, transform;
+}
+
+.timeline-card-revealed {
+  opacity: 1 !important;
+  transform: translateX(0) scale(1) !important;
+}
+
+.timeline-node-active {
+  animation: nodePulse 2.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-card-left,
+  .timeline-card-right,
+  .timeline-card-mobile,
+  .timeline-card-revealed {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  .timeline-node-active {
+    animation: none !important;
+  }
+}
