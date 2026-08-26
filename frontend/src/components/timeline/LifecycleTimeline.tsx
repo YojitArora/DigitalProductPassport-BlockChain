@@ -354,8 +354,8 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
                 style={{
                   padding: "0.35rem 0.75rem",
                   borderRadius: "var(--radius-sm)",
-                  border: isActive ? "1px solid var(--accent-primary)" : "1px solid var(--border-subtle)",
-                  background: isActive ? "var(--accent-primary)" : "var(--bg-card)",
+                  border: isActive ? "1px solid rgba(113, 135, 168, 0.45)" : "1px solid var(--border-subtle)",
+                  background: isActive ? "#253346" : "var(--bg-card)",
                   color: isActive ? "#ffffff" : "var(--text-secondary)",
                   fontSize: "0.8rem",
                   fontWeight: 600,
@@ -563,12 +563,12 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
                 <div
                   className="timeline-mobile-node"
                   style={{
-                    width: "14px",
-                    height: "14px",
+                    width: "13px",
+                    height: "13px",
                     borderRadius: "50%",
-                    background: catStyle.color,
-                    border: "2px solid #ffffff",
-                    boxShadow: `0 0 10px ${catStyle.glow}`,
+                    background: "#080808",
+                    border: `2px solid ${catStyle.color}`,
+                    boxShadow: isActive ? `0 0 6px ${catStyle.border}` : "none",
                     opacity: isActive ? 1 : 0,
                     transform: isActive ? "translateY(-50%) scale(1)" : "translateY(-50%) scale(0.4)",
                     transition: "opacity 0.4s ease, transform 0.4s ease",
@@ -641,12 +641,12 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
                   <div
                     onClick={() => setActiveModalEvent(evt)}
                     style={{
-                      width: "16px",
-                      height: "16px",
+                      width: "15px",
+                      height: "15px",
                       borderRadius: "50%",
-                      background: catStyle.color,
-                      border: "2.5px solid #ffffff",
-                      boxShadow: `0 0 14px ${catStyle.glow}, 0 0 4px #ffffff`,
+                      background: "#080808",
+                      border: `2.5px solid ${catStyle.color}`,
+                      boxShadow: isActive ? `0 0 6px ${catStyle.border}` : "none",
                       cursor: "pointer",
                       opacity: isActive ? 1 : 0,
                       transform: isEven
@@ -931,11 +931,13 @@ export const LifecycleTimeline: React.FC<LifecycleTimelineProps> = ({ product, e
                 onClick={() => setActiveModalEvent(null)}
                 style={{
                   padding: "0.6rem 1.25rem",
-                  background: "var(--accent-primary)",
+                  background: "#253346",
+                  border: "1px solid rgba(113, 135, 168, 0.4)",
                   color: "#ffffff",
                   borderRadius: "var(--radius-md)",
                   fontWeight: 600,
                   fontSize: "0.85rem",
+                  cursor: "pointer",
                 }}
               >
                 Close Inspector
@@ -967,18 +969,18 @@ const EventIconBadge: React.FC<EventIconBadgeProps> = ({
     <div
       onClick={onInspect}
       style={{
-        width: "44px",
-        height: "44px",
-        borderRadius: "50%",
-        background: isActive ? catStyle.bg : "transparent",
-        border: `2px solid ${isActive ? catStyle.color : "transparent"}`,
-        color: isActive ? catStyle.color : "transparent",
+        width: "40px",
+        height: "40px",
+        borderRadius: "var(--radius-md)",
+        background: "var(--bg-card)",
+        border: `1px solid ${isActive ? catStyle.border : "var(--border-subtle)"}`,
+        color: isActive ? catStyle.color : "var(--text-muted)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "20px",
+        fontSize: "18px",
         cursor: "pointer",
-        boxShadow: isActive ? `0 0 16px ${catStyle.glow}` : "none",
+        boxShadow: "var(--shadow-sm)",
         opacity: isActive ? 1 : 0,
         transform: isActive ? "scale(1)" : "scale(0.5)",
         transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -1008,23 +1010,23 @@ const EventCardContent: React.FC<EventCardContentProps> = ({
     <div
       onClick={onInspect}
       style={{
-        background: "var(--bg-card, #1f2937)",
-        border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))",
-        borderRadius: "var(--radius-md, 12px)",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-md)",
         padding: "1.25rem",
-        boxShadow: "var(--shadow-md)",
+        boxShadow: "var(--shadow-sm)",
         cursor: "pointer",
         transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
         position: "relative",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = catStyle.color;
-        e.currentTarget.style.boxShadow = `0 4px 16px ${catStyle.glow}`;
-        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.borderColor = catStyle.border;
+        e.currentTarget.style.boxShadow = "var(--shadow-md)";
+        e.currentTarget.style.transform = "translateY(-1px)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--border-subtle, rgba(255, 255, 255, 0.08))";
-        e.currentTarget.style.boxShadow = "var(--shadow-md)";
+        e.currentTarget.style.borderColor = "var(--border-subtle)";
+        e.currentTarget.style.boxShadow = "var(--shadow-sm)";
         e.currentTarget.style.transform = "translateY(0)";
       }}
     >
@@ -1032,15 +1034,15 @@ const EventCardContent: React.FC<EventCardContentProps> = ({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.4rem" }}>
         <span
           style={{
-            fontSize: "0.7rem",
+            fontSize: "0.68rem",
             fontWeight: 700,
             textTransform: "uppercase",
-            padding: "0.2rem 0.5rem",
+            padding: "0.2rem 0.55rem",
             borderRadius: "var(--radius-sm)",
             color: catStyle.color,
             background: catStyle.bg,
             border: `1px solid ${catStyle.border}`,
-            letterSpacing: "0.03em",
+            letterSpacing: "0.04em",
           }}
         >
           {evt.category}
@@ -1052,7 +1054,7 @@ const EventCardContent: React.FC<EventCardContentProps> = ({
       </div>
 
       {/* Title & Subtitle */}
-      <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.2rem" }}>
+      <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#ffffff", marginBottom: "0.2rem", letterSpacing: "-0.01em" }}>
         {evt.title}
       </h3>
 
@@ -1063,7 +1065,7 @@ const EventCardContent: React.FC<EventCardContentProps> = ({
       )}
 
       {evt.description && (
-        <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.45, marginBottom: "0.75rem" }}>
+        <p style={{ fontSize: "0.825rem", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: "0.75rem" }}>
           {evt.description}
         </p>
       )}
@@ -1077,7 +1079,7 @@ const EventCardContent: React.FC<EventCardContentProps> = ({
           flexWrap: "wrap",
           gap: "0.5rem",
           borderTop: "1px solid var(--border-subtle)",
-          paddingTop: "0.6rem",
+          paddingTop: "0.65rem",
           fontSize: "0.75rem",
           color: "var(--text-muted)",
         }}
@@ -1086,7 +1088,7 @@ const EventCardContent: React.FC<EventCardContentProps> = ({
           {evt.actor && (
             <span>
               <strong>{evt.actorRole ? `${evt.actorRole}: ` : "Actor: "}</strong>
-              <span style={{ fontFamily: "var(--font-mono)" }}>{truncate(evt.actor)}</span>
+              <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>{truncate(evt.actor)}</span>
             </span>
           )}
         </div>
