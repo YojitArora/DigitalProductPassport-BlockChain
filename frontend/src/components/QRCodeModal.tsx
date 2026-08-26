@@ -61,7 +61,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        backgroundColor: "rgba(0, 0, 0, 0.85)",
         backdropFilter: "blur(6px)",
         display: "flex",
         alignItems: "center",
@@ -72,10 +72,11 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       onClick={onClose}
     >
       <div
+        className="card-base"
         style={{
-          background: "var(--bg-secondary, #111827)",
-          border: "1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))",
-          borderRadius: "var(--radius-lg, 16px)",
+          background: "var(--bg-secondary)",
+          border: "1px solid var(--border-default)",
+          borderRadius: "var(--radius-lg)",
           padding: "2rem",
           maxWidth: "420px",
           width: "100%",
@@ -108,8 +109,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             width: "48px",
             height: "48px",
             borderRadius: "50%",
-            background: "rgba(99, 102, 241, 0.15)",
-            color: "var(--accent-primary, #6366f1)",
+            background: "rgba(113, 135, 168, 0.15)",
+            color: "var(--accent-primary)",
             fontSize: "24px",
             marginBottom: "1rem",
           }}
@@ -121,7 +122,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           style={{
             fontSize: "1.25rem",
             fontWeight: 700,
-            color: "var(--text-primary, #f9fafb)",
+            color: "#ffffff",
             marginBottom: "0.25rem",
           }}
         >
@@ -129,8 +130,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         </h3>
 
         <p
+          className="text-secondary"
           style={{
-            color: "var(--text-secondary, #9ca3af)",
             fontSize: "0.875rem",
             marginBottom: "1.5rem",
           }}
@@ -145,7 +146,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             display: "inline-block",
             padding: "1rem",
             background: "#ffffff",
-            borderRadius: "var(--radius-md, 10px)",
+            borderRadius: "var(--radius-md)",
             marginBottom: "1.25rem",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           }}
@@ -161,10 +162,10 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         <p
           style={{
             fontSize: "0.75rem",
-            color: "var(--text-muted, #6b7280)",
+            color: "var(--text-muted)",
             wordBreak: "break-all",
             fontFamily: "var(--font-mono)",
-            background: "var(--bg-card, #1f2937)",
+            background: "var(--bg-card)",
             padding: "0.5rem 0.75rem",
             borderRadius: "var(--radius-sm)",
             border: "1px solid var(--border-subtle)",
@@ -178,19 +179,13 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <button
             onClick={handleCopy}
+            className="btn btn-secondary"
             style={{
               flex: 1,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.4rem",
               padding: "0.6rem 1rem",
-              background: copied ? "rgba(16, 185, 129, 0.15)" : "var(--bg-card)",
-              color: copied ? "var(--status-success)" : "var(--text-primary)",
-              border: `1px solid ${copied ? "var(--status-success)" : "var(--border-subtle)"}`,
-              borderRadius: "var(--radius-md)",
-              fontWeight: 500,
               fontSize: "0.85rem",
+              color: copied ? "var(--status-success)" : "var(--text-primary)",
+              borderColor: copied ? "var(--status-success)" : "var(--border-default)",
             }}
           >
             {copied ? <LuCheck /> : <LuCopy />}
@@ -199,17 +194,10 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
           <button
             onClick={handleDownload}
+            className="btn btn-primary"
             style={{
               flex: 1,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.4rem",
               padding: "0.6rem 1rem",
-              background: "var(--accent-primary)",
-              color: "#ffffff",
-              borderRadius: "var(--radius-md)",
-              fontWeight: 600,
               fontSize: "0.85rem",
             }}
           >
@@ -217,7 +205,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           </button>
         </div>
 
-        <div style={{ marginTop: "1rem" }}>
+        <div style={{ marginTop: "1.15rem" }}>
           <a
             href={verifyUrl}
             target="_blank"

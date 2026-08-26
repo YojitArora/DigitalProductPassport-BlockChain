@@ -23,9 +23,9 @@ export const RepairSummary: React.FC<RepairSummaryProps> = ({
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0.75rem 1rem",
-        background: "var(--bg-card, #1f2937)",
-        border: "1px solid var(--border-subtle, rgba(255,255,255,0.08))",
-        borderRadius: "var(--radius-md, 10px)",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-md)",
         fontSize: "0.85rem",
       }}
     >
@@ -38,14 +38,14 @@ export const RepairSummary: React.FC<RepairSummaryProps> = ({
             width: "32px",
             height: "32px",
             borderRadius: "50%",
-            background: isUnderService ? "rgba(245, 158, 11, 0.15)" : "rgba(99, 102, 241, 0.12)",
+            background: isUnderService ? "rgba(245, 158, 11, 0.15)" : "rgba(113, 135, 168, 0.15)",
             color: isUnderService ? "var(--status-warning)" : "var(--accent-primary)",
           }}
         >
           <LuWrench />
         </div>
         <div>
-          <div style={{ fontWeight: 600, color: "var(--text-primary, #f9fafb)" }}>
+          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
             {count} {count === 1 ? "Repair" : "Repairs"} Recorded
           </div>
           <div
@@ -53,7 +53,7 @@ export const RepairSummary: React.FC<RepairSummaryProps> = ({
               display: "flex",
               alignItems: "center",
               gap: "0.25rem",
-              color: "var(--text-secondary, #9ca3af)",
+              color: "var(--text-secondary)",
               fontSize: "0.75rem",
             }}
           >
@@ -65,10 +65,10 @@ export const RepairSummary: React.FC<RepairSummaryProps> = ({
       {isUnderService && (
         <span
           style={{
-            padding: "0.25rem 0.5rem",
+            padding: "0.2rem 0.5rem",
             background: "rgba(245, 158, 11, 0.15)",
-            color: "var(--status-warning, #f59e0b)",
-            borderRadius: "var(--radius-sm, 6px)",
+            color: "var(--status-warning)",
+            borderRadius: "var(--radius-sm)",
             fontSize: "0.75rem",
             fontWeight: 600,
           }}

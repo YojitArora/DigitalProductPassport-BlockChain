@@ -25,9 +25,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         alignItems: "center",
         justifyContent: "center",
         padding: "2.5rem 1.5rem",
-        background: "var(--bg-card, #1f2937)",
-        borderRadius: "var(--radius-md, 10px)",
-        border: "1px dashed var(--border-subtle, rgba(255, 255, 255, 0.15))",
+        background: "var(--bg-card)",
+        borderRadius: "var(--radius-md)",
+        border: "1px dashed var(--border-subtle)",
         textAlign: "center",
         margin: "0.5rem 0",
       }}
@@ -40,8 +40,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           width: "44px",
           height: "44px",
           borderRadius: "50%",
-          background: "rgba(156, 163, 175, 0.12)",
-          color: "var(--text-muted, #9ca3af)",
+          background: "rgba(255, 255, 255, 0.04)",
+          color: "var(--text-muted)",
           fontSize: "22px",
           marginBottom: "0.75rem",
         }}
@@ -53,7 +53,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         style={{
           fontSize: "1rem",
           fontWeight: 600,
-          color: "var(--text-primary, #f9fafb)",
+          color: "#ffffff",
           marginBottom: "0.25rem",
         }}
       >
@@ -61,11 +61,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </h4>
 
       <p
+        className="text-secondary"
         style={{
-          color: "var(--text-secondary, #9ca3af)",
           fontSize: "0.85rem",
           maxWidth: "380px",
-          lineHeight: "1.4",
+          lineHeight: "1.45",
           marginBottom: action ? "1rem" : "0",
         }}
       >
@@ -75,16 +75,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       {action && (
         <button
           onClick={action.onClick}
+          className="btn btn-primary"
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.4rem",
-            padding: "0.5rem 1rem",
-            background: "var(--accent-primary, #6366f1)",
-            color: "#ffffff",
-            borderRadius: "var(--radius-sm, 6px)",
-            fontSize: "0.85rem",
-            fontWeight: 600,
+            padding: "0.45rem 0.9rem",
+            fontSize: "0.825rem",
           }}
         >
           {action.label}

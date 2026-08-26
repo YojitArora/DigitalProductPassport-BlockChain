@@ -21,11 +21,11 @@ export const TransferStatus: React.FC<TransferStatusProps> = ({
           alignItems: "center",
           gap: "0.5rem",
           padding: "0.6rem 0.85rem",
-          background: "var(--bg-card, #1f2937)",
-          border: "1px solid var(--border-subtle, rgba(255,255,255,0.08))",
-          borderRadius: "var(--radius-md, 10px)",
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)",
           fontSize: "0.8rem",
-          color: "var(--text-muted, #6b7280)",
+          color: "var(--text-muted)",
         }}
       >
         <LuCheck style={{ color: "var(--status-success)" }} />
@@ -47,7 +47,7 @@ export const TransferStatus: React.FC<TransferStatusProps> = ({
         padding: "0.75rem 1rem",
         background: "rgba(245, 158, 11, 0.08)",
         border: "1px solid rgba(245, 158, 11, 0.3)",
-        borderRadius: "var(--radius-md, 10px)",
+        borderRadius: "var(--radius-md)",
         fontSize: "0.85rem",
       }}
     >
@@ -56,7 +56,7 @@ export const TransferStatus: React.FC<TransferStatusProps> = ({
           display: "flex",
           alignItems: "center",
           gap: "0.4rem",
-          color: "var(--status-warning, #f59e0b)",
+          color: "var(--status-warning)",
           fontWeight: 600,
         }}
       >
@@ -68,13 +68,13 @@ export const TransferStatus: React.FC<TransferStatusProps> = ({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          color: "var(--text-secondary, #9ca3af)",
+          color: "var(--text-secondary)",
           fontSize: "0.8rem",
-          fontFamily: "var(--font-mono, monospace)",
+          fontFamily: "var(--font-mono)",
         }}
       >
         <span>Designated Recipient:</span>
-        <span style={{ color: "var(--text-primary, #f9fafb)", fontWeight: 500 }}>
+        <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>
           {truncate(pendingTransfer.to)}
         </span>
       </div>
@@ -84,7 +84,7 @@ export const TransferStatus: React.FC<TransferStatusProps> = ({
           display: "flex",
           alignItems: "center",
           gap: "0.35rem",
-          color: "var(--text-muted, #6b7280)",
+          color: "var(--text-muted)",
           fontSize: "0.75rem",
         }}
       >

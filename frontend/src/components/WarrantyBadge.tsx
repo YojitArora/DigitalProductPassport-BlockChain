@@ -23,15 +23,15 @@ export const WarrantyBadge: React.FC<WarrantyBadgeProps> = ({ warranty, size = "
     : 0;
 
   const fontSizes = {
-    sm: "0.75rem",
-    md: "0.85rem",
-    lg: "0.95rem",
+    sm: "0.725rem",
+    md: "0.8rem",
+    lg: "0.9rem",
   };
 
   const paddings = {
     sm: "0.2rem 0.5rem",
-    md: "0.35rem 0.75rem",
-    lg: "0.5rem 1rem",
+    md: "0.3rem 0.65rem",
+    lg: "0.45rem 0.85rem",
   };
 
   if (!isConfigured) {
@@ -42,10 +42,10 @@ export const WarrantyBadge: React.FC<WarrantyBadgeProps> = ({ warranty, size = "
           alignItems: "center",
           gap: "0.35rem",
           padding: paddings[size],
-          background: "rgba(156, 163, 175, 0.12)",
-          color: "var(--text-muted, #9ca3af)",
-          border: "1px solid rgba(156, 163, 175, 0.25)",
-          borderRadius: "var(--radius-sm, 6px)",
+          background: "rgba(255, 255, 255, 0.04)",
+          color: "var(--text-muted)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-sm)",
           fontSize: fontSizes[size],
           fontWeight: 500,
         }}
@@ -63,10 +63,10 @@ export const WarrantyBadge: React.FC<WarrantyBadgeProps> = ({ warranty, size = "
           alignItems: "center",
           gap: "0.35rem",
           padding: paddings[size],
-          background: "rgba(16, 185, 129, 0.12)",
-          color: "var(--status-success, #10b981)",
+          background: "var(--status-success-tint)",
+          color: "var(--status-success)",
           border: "1px solid rgba(16, 185, 129, 0.3)",
-          borderRadius: "var(--radius-sm, 6px)",
+          borderRadius: "var(--radius-sm)",
           fontSize: fontSizes[size],
           fontWeight: 600,
         }}
@@ -83,10 +83,10 @@ export const WarrantyBadge: React.FC<WarrantyBadgeProps> = ({ warranty, size = "
         alignItems: "center",
         gap: "0.35rem",
         padding: paddings[size],
-        background: "rgba(239, 68, 68, 0.12)",
-        color: "var(--status-danger, #ef4444)",
+        background: "var(--status-danger-tint)",
+        color: "var(--status-danger)",
         border: "1px solid rgba(239, 68, 68, 0.3)",
-        borderRadius: "var(--radius-sm, 6px)",
+        borderRadius: "var(--radius-sm)",
         fontSize: fontSizes[size],
         fontWeight: 600,
       }}

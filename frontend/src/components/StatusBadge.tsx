@@ -22,8 +22,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
   let meta = PRODUCT_STATUS_META[status] || {
     label: "Unknown",
-    color: "#6b7280",
-    bg: "rgba(107, 114, 128, 0.12)",
+    color: "var(--text-muted)",
+    bg: "rgba(255, 255, 255, 0.05)",
   };
 
   let icon = STATUS_ICONS[status];
@@ -32,22 +32,22 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   if (isInventory && status === ProductStatus.Active) {
     meta = {
       label: "Manufacturer Inventory",
-      color: "var(--accent-primary, #6366f1)",
-      bg: "rgba(99, 102, 241, 0.12)",
+      color: "var(--accent-primary)",
+      bg: "rgba(113, 135, 168, 0.12)",
     };
     icon = <LuWarehouse />;
   }
 
   const fontSizes = {
-    sm: "0.75rem",
-    md: "0.85rem",
-    lg: "0.95rem",
+    sm: "0.725rem",
+    md: "0.8rem",
+    lg: "0.9rem",
   };
 
   const paddings = {
     sm: "0.2rem 0.5rem",
-    md: "0.35rem 0.75rem",
-    lg: "0.5rem 1rem",
+    md: "0.3rem 0.65rem",
+    lg: "0.45rem 0.85rem",
   };
 
   return (
@@ -60,10 +60,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
         background: meta.bg,
         color: meta.color,
         border: `1px solid ${meta.color}40`,
-        borderRadius: "var(--radius-sm, 6px)",
+        borderRadius: "var(--radius-sm)",
         fontSize: fontSizes[size],
         fontWeight: 600,
-        fontFamily: "var(--font-sans, sans-serif)",
+        fontFamily: "var(--font-sans)",
         letterSpacing: "0.01em",
       }}
     >
